@@ -1,0 +1,99 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal {
+  width: 80%;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.info {
+  position: absolute;
+  top: -170px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 150px;
+  max-width: 300px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background: #fff;
+  box-shadow: 0px 1px 2px #888;
+  z-index: 220;
+  word-break: break-word;
+  display: flex;
+  flex-direction: column; /* 위아래로 쌓기 */
+  align-items: center; /* 가운데 정렬 */
+}
+
+/* 닫기 버튼 스타일 */
+.info .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #888;
+  width: 17px;
+  height: 17px;
+  background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/overlay_close.png');
+  cursor: pointer;
+  z-index: 230; /* 버튼이 인포윈도우 위에 표시되도록 설정 */
+}
+
+.info .title {
+  width: 100%;
+  padding: 8px 10px;
+  background: #eee;
+  border-bottom: 1px solid #ddd;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.info .body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0; /* 위아래 여백만 */
+}
+
+.info .desc {
+  padding: 15px;
+  font-size: 14px;
+  text-align: left;
+}
+
+.info .buttons {
+  display: flex;
+  gap: 10px; /* 버튼 사이 간격 */
+}
+
+.info .buttons img {
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+  border: 2px solid #4fc3f7;
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.info .buttons img:hover {
+  background-color: #e1f5fe;
+}
