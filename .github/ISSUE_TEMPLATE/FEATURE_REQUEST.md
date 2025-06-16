@@ -1,7 +1,7 @@
 ---
 name: Feature Request
 about: 기능 추가 이슈 템플릿
-title: "[FEAT] 이슈 제목"
+title: "[FEATURE] 이슈 제목"
 labels: "enhancement"
 assignees: ""
 ---
