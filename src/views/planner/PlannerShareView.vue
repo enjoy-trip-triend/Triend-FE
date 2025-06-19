@@ -2,7 +2,7 @@
   <div class="planner-share-view">
     <h2>공유된 플래너 보기</h2>
 
-    <div v-if="!joined" class="password-section">
+    <div v-if="!isEditable" class="password-section">
       <label>비밀번호를 입력하세요</label>
       <div class="input-group">
         <input v-model="password" type="password" placeholder="비밀번호 입력" @keyup.enter="joinPlanner" />
@@ -13,10 +13,15 @@
 
     <div v-else class="planner-info">
       <div class="participation-section">
-        <template v-if="isLoggedIn">
+        <template v-if="isLoggedIn && isEditable">
+          <p>✏️ 플랜 수정이 가능합니다.</p>
+        </template>
+
+        <template v-else-if="isLoggedIn && !isEditable">
           <p>✅ 플랜에 참여하고 함께 수정해보세요!</p>
           <button @click="joinPlanner">참여하기</button>
         </template>
+
         <template v-else>
           <p>🔒 로그인 후 더 많은 서비스를 경험해보세요!</p>
           <button @click="goLogin">로그인 하기</button>
@@ -36,9 +41,18 @@
       </div>
       <br>
       <PlanTableSection
+        :isEditable="isEditable"
         :plans="plans"
         :selectedPlan="null"
         @selectPlan="handleSelectPlan"
+        @openUpdatePlansModal="handleOpenUpdatePlansModal"
+      />
+      <UpdatePlanModal
+        v-if="updatePlansVisible"
+        :plans="plans"
+        :planner="planner"
+        @close="updatePlansVisible = false"
+        @updatePlans="handlePlansUpdate"
       />
     </div>
   </div>
@@ -49,6 +63,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { triendApi } from '@/axios'
 import PlanTableSection from '@/components/planner/plan/PlanTableSection.vue'
+import UpdatePlanModal from '@/components/planner/plan/UpdatePlanModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -56,9 +71,10 @@ const secretCode = route.params.secretCode
 
 const password = ref('')
 const planner = ref({})
+const isEditable = ref(false)
 const plans = ref([])
-const joined = ref(false)
 const errorMsg = ref('')
+const updatePlansVisible = ref(false)
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
 
 const verifyAndFetchPlanner = async () => {
@@ -78,7 +94,7 @@ const verifyAndFetchPlanner = async () => {
 
     planner.value = response.data.planner
     plans.value = response.data.plans
-    joined.value = true
+    isEditable.value = response.data.isEditable
   } catch (err) {
     console.error('비밀번호 검증 실패', err)
     alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
@@ -104,6 +120,15 @@ const goLogin = () => {
 
 const handleSelectPlan = (plan) => {
   console.log('선택된 플랜:', plan)
+}
+
+const handleOpenUpdatePlansModal = () => {
+  console.log('수정 모달 열기')
+  updatePlansVisible.value = true
+}
+
+const handlePlansUpdate = (updatedPlans) => {
+  plans.value = updatedPlans
 }
 </script>
 
