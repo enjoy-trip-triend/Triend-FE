@@ -1,157 +1,186 @@
 <template>
-  <main class="share-layout">
-    <div class="planner-sections">
-      <div class="left-section">
-        <PlanTableSection
-          v-if="currentView === 'table'"
-          @openUpdatePlansModal="handleUpdatePlan"
-          :plans="plans"
-          :selectedPlan="selectedPlan"
-          @selectPlan="selectedPlan = $event"
-        />
-        <PlanMapSection
-          v-if="currentView === 'map' && plans && plans.length > 0"
-          :plans="plans"
-          :selectedPlan="selectedPlan"
-          @selectPlan="selectedPlan = $event"
-          v-model:selectedDate="selectedDate"
-        />
-        <button class="circle-toggle-btn" @click="toggleView">
-          <span v-if="currentView === 'table'">🗺</span>
-          <span v-else>📋</span>
-        </button>
+  <div class="planner-share-view">
+    <h2>공유된 플래너 보기</h2>
+
+    <div v-if="!joined" class="password-section">
+      <label>비밀번호를 입력하세요</label>
+      <div class="input-group">
+        <input v-model="password" type="password" placeholder="비밀번호 입력" @keyup.enter="joinPlanner" />
+        <button @click="verifyAndFetchPlanner">확인</button>
       </div>
-      <div class="right-section">
-        <PlanCardSection
-          :plans="plans"
-          :selectedPlan="selectedPlan"
-          @selectPlan="selectedPlan = $event"
-          v-model:selectedDate="selectedDate"
-        />
-      </div>
+      <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
     </div>
-  </main>
+
+    <div v-else class="planner-info">
+      <h3>{{ planner.name }}</h3>
+      <div class="planner-meta">
+        <div class="meta-item">
+          <span class="meta-label">지역:</span>
+          <span class="meta-value">{{ planner.location }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">날짜:</span>
+          <span class="meta-value">{{ planner.startDay }} ~ {{ planner.endDay }}</span>
+        </div>
+      </div>
+      <br>
+      <PlanTableSection
+        :plans="plans"
+        :selectedPlan="null"
+        @selectPlan="handleSelectPlan"
+      />
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { triendApi } from '@/axios'
 import PlanTableSection from '@/components/planner/plan/PlanTableSection.vue'
-import PlanCardSection from '@/components/planner/plan/PlanCardSection.vue'
-import { useRouter } from 'vue-router'
-import PlanMapSection from '@/components/planner/plan/PlanMapSection.vue'
-const router = useRouter()
+
 const route = useRoute()
-const plannerId = Number(route.params.plannerId)
+const secretCode = route.params.secretCode
+
+const password = ref('')
+const planner = ref({})
 const plans = ref([])
-const selectedPlan = ref(null)
-const currentView = ref('table')
-const selectedDate = ref('')
-onMounted(async () => {
+const joined = ref(false)
+const errorMsg = ref('')
+
+const verifyAndFetchPlanner = async () => {
   try {
+    // 1단계: 비밀번호 검증
+    await triendApi({
+      url: `/api/planners-share/${secretCode}/verify`,
+      method: 'post',
+      data: { password: password.value },
+    })
+
+    // 2단계: 데이터 가져오기
     const response = await triendApi({
-      url: `/api/planners/${plannerId}/shared`,
+      url: `/api/planners-share/${secretCode}`,
       method: 'get',
     })
-    plans.value = response.data
-  } catch (err) {
-    console.error('플랜 불러오기 실패:', err)
-  }
-})
 
-const handleUpdatePlan = () => {
-  alert('로그인 후 이용 가능한 기능입니다.')
-  return router.push({ name: 'LoginView' })
+    planner.value = response.data.planner
+    plans.value = response.data.plans
+    joined.value = true
+    console.log("planner:" + planner.value)
+
+    // 3단계: 로그인 사용자면 참여 등록 시도
+    // if (localStorage.getItem('accessToken')) {
+    //   try {
+    //     await triendApi({
+    //       url: `/api/planners-share/${secretCode}/join`,
+    //       method: 'post',
+    //     })
+    //     console.log('참여 등록 완료')
+    //   } catch (err) {
+    //     console.warn('참여 등록 실패 (로그인 안함 or 기타)', err)
+    //   }
+    // }
+
+  } catch (err) {
+    console.error('비밀번호 검증 실패', err)
+    alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
+  }
 }
 
-const toggleView = () => {
-  if (currentView.value === 'table' && (!plans.value || plans.value.length === 0)) {
-    alert('플랜이 없어서 지도를 표시할 수 없습니다.')
-    return
-  }
-  currentView.value = currentView.value === 'table' ? 'map' : 'table'
+const handleSelectPlan = (plan) => {
+  console.log('선택된 플랜:', plan)
 }
 </script>
 
 <style scoped>
-.share-layout {
-  margin-top: 60px;
-  height: calc(100vh - 120px); /* 예: 헤더 60px + 푸터 60px 고려 */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-sizing: border-box;
+.planner-share-view {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.share-title {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #0288d1;
+.password-section {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(200, 200, 200, 0.3);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.planner-sections {
+.password-section label {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.input-group {
   display: flex;
+  gap: 10px;
+}
+
+.input-group input[type='password'] {
   flex: 1;
-  width: 100%;
-  gap: 20px;
-  overflow: hidden;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
-.planner-sections > *:first-child {
-  flex: 7;
-}
-
-.planner-sections > *:last-child {
-  flex: 3;
-}
-
-.table-section {
-  flex: 6;
-  overflow-y: auto;
-}
-
-.card-section {
-  flex: 4;
-  overflow-y: auto;
-}
-
-.left-section {
-  flex: 7;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  position: relative;
-}
-
-.right-section {
-  flex: 3;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.circle-toggle-btn {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: #0288d1;
+.input-group button {
+  padding: 12px 20px;
+  font-size: 16px;
+  background-color: #1976d2;
   color: white;
-  font-size: 24px;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
-  z-index: 10;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition:
-    background-color 0.2s,
-    transform 0.2s;
+  transition: background-color 0.2s;
 }
 
-.circle-toggle-btn:hover {
-  background-color: #015f9b;
-  transform: scale(1.1);
+.input-group button:hover {
+  background-color: #135ba1;
 }
+
+.error-msg {
+  margin-top: 8px;
+  color: red;
+  font-size: 14px;
+}
+.planner-info {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #f9fbfd;
+  border: 1px solid #e0e0e0;
+}
+
+.planner-info h3 {
+  margin-bottom: 12px;
+  color: #1976d2;
+}
+
+.planner-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.meta-item {
+  display: flex;
+  gap: 8px;
+}
+
+.meta-label {
+  font-weight: bold;
+  color: #555;
+}
+
+.meta-value {
+  color: #333;
+}
+
 </style>
