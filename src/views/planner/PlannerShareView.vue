@@ -2,7 +2,7 @@
   <div class="planner-share-view">
     <h2>공유된 플래너 보기</h2>
 
-    <div v-if="!isEditable" class="password-section">
+    <div v-if="!joined" class="password-section">
       <label>비밀번호를 입력하세요</label>
       <div class="input-group">
         <input v-model="password" type="password" placeholder="비밀번호 입력" @keyup.enter="joinPlanner" />
@@ -73,6 +73,7 @@ const password = ref('')
 const planner = ref({})
 const isEditable = ref(false)
 const plans = ref([])
+const joined = ref(false)
 const errorMsg = ref('')
 const updatePlansVisible = ref(false)
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
@@ -95,6 +96,7 @@ const verifyAndFetchPlanner = async () => {
     planner.value = response.data.planner
     plans.value = response.data.plans
     isEditable.value = response.data.isEditable
+    joined.value = true;
   } catch (err) {
     console.error('비밀번호 검증 실패', err)
     alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
