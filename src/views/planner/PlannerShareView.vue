@@ -12,6 +12,17 @@
     </div>
 
     <div v-else class="planner-info">
+      <div class="participation-section">
+        <template v-if="isLoggedIn">
+          <p>✅ 플랜에 참여하고 함께 수정해보세요!</p>
+          <button @click="joinPlanner">참여하기</button>
+        </template>
+        <template v-else>
+          <p>🔒 로그인 후 더 많은 서비스를 경험해보세요!</p>
+          <button @click="goLogin">로그인 하기</button>
+        </template>
+      </div>
+      <br>
       <h3>{{ planner.name }}</h3>
       <div class="planner-meta">
         <div class="meta-item">
@@ -34,12 +45,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { triendApi } from '@/axios'
 import PlanTableSection from '@/components/planner/plan/PlanTableSection.vue'
 
 const route = useRoute()
+const router = useRouter()
 const secretCode = route.params.secretCode
 
 const password = ref('')
@@ -47,6 +59,7 @@ const planner = ref({})
 const plans = ref([])
 const joined = ref(false)
 const errorMsg = ref('')
+const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
 
 const verifyAndFetchPlanner = async () => {
   try {
@@ -66,25 +79,27 @@ const verifyAndFetchPlanner = async () => {
     planner.value = response.data.planner
     plans.value = response.data.plans
     joined.value = true
-    console.log("planner:" + planner.value)
-
-    // 3단계: 로그인 사용자면 참여 등록 시도
-    // if (localStorage.getItem('accessToken')) {
-    //   try {
-    //     await triendApi({
-    //       url: `/api/planners-share/${secretCode}/join`,
-    //       method: 'post',
-    //     })
-    //     console.log('참여 등록 완료')
-    //   } catch (err) {
-    //     console.warn('참여 등록 실패 (로그인 안함 or 기타)', err)
-    //   }
-    // }
-
   } catch (err) {
     console.error('비밀번호 검증 실패', err)
     alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
   }
+}
+
+const joinPlanner = async () => {
+  try {
+    await triendApi({
+      url: `/api/planners-share/${secretCode}/join`,
+      method: 'post',
+    })
+    alert('참여가 완료되었습니다!')
+  } catch (err) {
+    console.error('참여 실패', err)
+    alert('참여 중 오류가 발생했습니다.')
+  }
+}
+
+const goLogin = () => {
+  router.push({ name: 'LoginView' })
 }
 
 const handleSelectPlan = (plan) => {
@@ -182,5 +197,35 @@ const handleSelectPlan = (plan) => {
 .meta-value {
   color: #333;
 }
+
+.participation-section {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #f1f7fc;
+  border: 1px solid #cce0f4;
+  text-align: center;
+}
+
+.participation-section p {
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: #333;
+}
+
+.participation-section button {
+  padding: 10px 20px;
+  font-size: 15px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.participation-section button:hover {
+  background-color: #135ba1;
+}
+
 
 </style>
