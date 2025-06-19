@@ -186,13 +186,31 @@ const handlePlansUpdate = (updatedPlans) => {
   plans.value = updatedPlans
 }
 
-const sharePlanner = (planner) => {
+const sharePlanner = async (planner) => {
   if (!window.Kakao) {
     alert('Kakao SDK가 로드되지 않았습니다.')
     return
   }
-  const shareUrl = `${window.location.origin}/planners/share/${planner.id}`
-  window.Kakao.Share.sendDefault({
+
+  const password = prompt('공유 비밀번호를 입력하세요 (최소 4자리 이상)')
+
+  if (!password || password.length < 4) {
+    alert('비밀번호는 최소 4자리 이상 입력해야 합니다.')
+    return
+  }
+
+  try{
+    const response = await triendApi({
+      url: `/api/planners-share/${planner.id}`,
+      method: 'post',
+      data:{
+        password: password
+      },
+    })
+    const secretCode = response.data.secretCode
+    const shareUrl = `${window.location.origin}/planners/share/${secretCode}`
+
+    window.Kakao.Share.sendDefault({
     objectType: 'feed',
     content: {
       title: `📘 ${planner.name} 공유`,
@@ -206,6 +224,10 @@ const sharePlanner = (planner) => {
     },
     buttons: [{ title: '세부 일정 확인하기', link: { webUrl: shareUrl } }],
   })
+  }catch(err){
+    console.error('공유 링크 생성 실패', err)
+    alert('공유 링크 생성에 실패했습니다.')
+  }
 }
 </script>
 
