@@ -213,7 +213,7 @@ const sharePlanner = async (planner) => {
     window.Kakao.Share.sendDefault({
     objectType: 'feed',
     content: {
-      title: `📘 ${planner.name} 공유`,
+      title: `📘 ${planner.name} 공유 (비밀번호: ${password})`,
       description: [
         `지역: ${planner.location}`,
         `날짜: ${planner.startDay} ~ ${planner.endDay}`,
