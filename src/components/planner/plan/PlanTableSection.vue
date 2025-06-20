@@ -2,7 +2,7 @@
   <section class="plan-table">
     <div class="table-header">
       <h3>📅 여행 계획표</h3>
-      <button class="edit-btn" @click="openUpdatePlansModal">수정</button>
+      <button v-if="isEditable" class="edit-btn" @click="openUpdatePlansModal">수정</button>
     </div>
     <table>
       <thead>
@@ -53,6 +53,7 @@ import { computed, watch, nextTick } from 'vue'
 const props = defineProps({
   plans: Array,
   selectedPlan: Object,
+  isEditable: Boolean,
 })
 
 const emit = defineEmits(['openUpdatePlansModal', 'selectPlan'])
