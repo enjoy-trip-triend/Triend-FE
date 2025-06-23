@@ -67,6 +67,7 @@ import UpdatePlanModal from '@/components/planner/plan/UpdatePlanModal.vue'
 
 const route = useRoute()
 const router = useRouter()
+const plannerId = route.params.plannerId
 const secretCode = route.params.secretCode
 
 const password = ref('')
@@ -82,14 +83,14 @@ const verifyAndFetchPlanner = async () => {
   try {
     // 1단계: 비밀번호 검증
     await triendApi({
-      url: `/api/planners-share/${secretCode}/verify`,
+      url: `/api/planners/${plannerId}/share/${secretCode}/verify`,
       method: 'post',
       data: { password: password.value },
     })
 
     // 2단계: 데이터 가져오기
     const response = await triendApi({
-      url: `/api/planners-share/${secretCode}`,
+      url: `/api/planners/${plannerId}/share/${secretCode}`,
       method: 'get',
     })
 
@@ -106,7 +107,7 @@ const verifyAndFetchPlanner = async () => {
 const joinPlanner = async () => {
   try {
     await triendApi({
-      url: `/api/planners-share/${secretCode}/join`,
+      url: `/api/planners/${plannerId}/share/${secretCode}/join`,
       method: 'post',
     })
     alert('참여가 완료되었습니다!')

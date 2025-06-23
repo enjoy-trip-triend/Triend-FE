@@ -201,14 +201,14 @@ const sharePlanner = async (planner) => {
 
   try{
     const response = await triendApi({
-      url: `/api/planners-share/${planner.id}`,
+      url: `/api/planners/${planner.id}/share`,
       method: 'post',
       data:{
         password: password
       },
     })
     const secretCode = response.data.secretCode
-    const shareUrl = `${window.location.origin}/planners/share/${secretCode}`
+    const shareUrl = `${window.location.origin}/planners/${planner.id}/share/${secretCode}`
 
     window.Kakao.Share.sendDefault({
     objectType: 'feed',
