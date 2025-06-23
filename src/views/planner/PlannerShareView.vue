@@ -5,7 +5,7 @@
     <div v-if="!joined" class="password-section">
       <label>비밀번호를 입력하세요</label>
       <div class="input-group">
-        <input v-model="password" type="password" placeholder="비밀번호 입력" @keyup.enter="joinPlanner" />
+        <input v-model="password" type="password" placeholder="비밀번호 입력" @keyup.enter="verifyAndFetchPlanner" />
         <button @click="verifyAndFetchPlanner">확인</button>
       </div>
       <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
@@ -27,7 +27,7 @@
           <button @click="goLogin">로그인 하기</button>
         </template>
       </div>
-      <br>
+
       <h3>{{ planner.name }}</h3>
       <div class="planner-meta">
         <div class="meta-item">
@@ -39,14 +39,43 @@
           <span class="meta-value">{{ planner.startDay }} ~ {{ planner.endDay }}</span>
         </div>
       </div>
-      <br>
-      <PlanTableSection
-        :isEditable="isEditable"
-        :plans="plans"
-        :selectedPlan="null"
-        @selectPlan="handleSelectPlan"
-        @openUpdatePlansModal="handleOpenUpdatePlansModal"
-      />
+
+      <!-- Map / Table / Card 뷰 -->
+      <div class="planner-sections">
+        <div class="left-section">
+          <PlanTableSection
+            v-if="currentView === 'table'"
+            :isEditable="isEditable"
+            :plans="plans"
+            :selectedPlan="selectedPlan"
+            @selectPlan="selectedPlan = $event"
+            @openUpdatePlansModal="handleOpenUpdatePlansModal"
+          />
+
+          <PlanMapSection
+            v-if="currentView === 'map' && plans.length > 0"
+            :plans="plans"
+            :selectedPlan="selectedPlan"
+            @selectPlan="selectedPlan = $event"
+            v-model:selectedDate="selectedDate"
+          />
+
+          <button class="circle-toggle-btn" @click="toggleView">
+            <span v-if="currentView === 'table'">🗺</span>
+            <span v-else>📋</span>
+          </button>
+        </div>
+
+        <div class="right-section">
+          <PlanCardSection
+            :plans="plans"
+            :selectedPlan="selectedPlan"
+            @selectPlan="selectedPlan = $event"
+            v-model:selectedDate="selectedDate"
+          />
+        </div>
+      </div>
+
       <UpdatePlanModal
         v-if="updatePlansVisible"
         :plans="plans"
@@ -63,6 +92,8 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { triendApi } from '@/axios'
 import PlanTableSection from '@/components/planner/plan/PlanTableSection.vue'
+import PlanMapSection from '@/components/planner/plan/PlanMapSection.vue'
+import PlanCardSection from '@/components/planner/plan/PlanCardSection.vue'
 import UpdatePlanModal from '@/components/planner/plan/UpdatePlanModal.vue'
 
 const route = useRoute()
@@ -79,16 +110,27 @@ const errorMsg = ref('')
 const updatePlansVisible = ref(false)
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
 
+// 추가된 상태
+const selectedPlan = ref(null)
+const selectedDate = ref('')
+const currentView = ref('table')
+
+const toggleView = () => {
+  if (currentView.value === 'table' && (!plans.value || plans.value.length === 0)) {
+    alert('플랜이 없어서 지도를 표시할 수 없습니다.')
+    return
+  }
+  currentView.value = currentView.value === 'table' ? 'map' : 'table'
+}
+
 const verifyAndFetchPlanner = async () => {
   try {
-    // 1단계: 비밀번호 검증
     await triendApi({
       url: `/api/planners/${plannerId}/share/${secretCode}/verify`,
       method: 'post',
       data: { password: password.value },
     })
 
-    // 2단계: 데이터 가져오기
     const response = await triendApi({
       url: `/api/planners/${plannerId}/share/${secretCode}`,
       method: 'get',
@@ -97,7 +139,7 @@ const verifyAndFetchPlanner = async () => {
     planner.value = response.data.planner
     plans.value = response.data.plans
     isEditable.value = response.data.isEditable
-    joined.value = true;
+    joined.value = true
   } catch (err) {
     console.error('비밀번호 검증 실패', err)
     alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
@@ -111,6 +153,7 @@ const joinPlanner = async () => {
       method: 'post',
     })
     alert('참여가 완료되었습니다!')
+    await verifyAndFetchPlanner()
   } catch (err) {
     console.error('참여 실패', err)
     alert('참여 중 오류가 발생했습니다.')
@@ -121,12 +164,7 @@ const goLogin = () => {
   router.push({ name: 'LoginView' })
 }
 
-const handleSelectPlan = (plan) => {
-  console.log('선택된 플랜:', plan)
-}
-
 const handleOpenUpdatePlansModal = () => {
-  console.log('수정 모달 열기')
   updatePlansVisible.value = true
 }
 
@@ -137,9 +175,49 @@ const handlePlansUpdate = (updatedPlans) => {
 
 <style scoped>
 .planner-share-view {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.planner-info {
+  margin-top: 20px;
+  background-color: #f9fbfd;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.participation-section {
+  margin-bottom: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+}
+
+.participation-section p {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.participation-section button {
+  padding: 12px 24px;
+  font-size: 16px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.participation-section button:hover {
+  background-color: #135ba1;
 }
 
 .password-section {
@@ -192,24 +270,16 @@ const handlePlansUpdate = (updatedPlans) => {
   color: red;
   font-size: 14px;
 }
-.planner-info {
-  margin-bottom: 20px;
-  padding: 16px;
-  border-radius: 8px;
-  background-color: #f9fbfd;
-  border: 1px solid #e0e0e0;
-}
 
-.planner-info h3 {
-  margin-bottom: 12px;
-  color: #1976d2;
+.planner-info {
+  margin-top: 20px;
 }
 
 .planner-meta {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 16px;
+  margin-bottom: 20px;
 }
 
 .meta-item {
@@ -226,34 +296,52 @@ const handlePlansUpdate = (updatedPlans) => {
   color: #333;
 }
 
-.participation-section {
-  margin-top: 20px;
+
+.planner-sections {
+  display: flex;
+  width: 100%;
+  gap: 20px;
+}
+
+.left-section {
+  flex: 7;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.right-section {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: #f9fbfd;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
   padding: 16px;
-  border-radius: 8px;
-  background-color: #f1f7fc;
-  border: 1px solid #cce0f4;
-  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.participation-section p {
-  margin-bottom: 12px;
-  font-size: 16px;
-  color: #333;
-}
-
-.participation-section button {
-  padding: 10px 20px;
-  font-size: 15px;
-  background-color: #1976d2;
+.circle-toggle-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #0288d1;
   color: white;
+  font-size: 24px;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s, transform 0.2s;
 }
 
-.participation-section button:hover {
-  background-color: #135ba1;
+.circle-toggle-btn:hover {
+  background-color: #015f9b;
+  transform: scale(1.1);
 }
-
-
 </style>
