@@ -188,47 +188,59 @@ const handlePlansUpdate = (updatedPlans) => {
 
 const sharePlanner = async (planner) => {
   if (!window.Kakao) {
-    alert('Kakao SDK가 로드되지 않았습니다.')
-    return
+    alert('Kakao SDK가 로드되지 않았습니다.');
+    return;
   }
 
-  const password = prompt('공유 비밀번호를 입력하세요 (최소 4자리 이상)')
-
-  if (!password || password.length < 4) {
-    alert('비밀번호는 최소 4자리 이상 입력해야 합니다.')
-    return
-  }
-
-  try{
-    const response = await triendApi({
+  try {
+    const checkResponse = await triendApi({
       url: `/api/planners/${planner.id}/share`,
-      method: 'post',
-      data:{
-        password: password
-      },
-    })
-    const secretCode = response.data.secretCode
-    const shareUrl = `${window.location.origin}/planners/${planner.id}/share/${secretCode}`
+      method: 'get'
+    });
+
+    let secretCode = null;
+
+    if (checkResponse.data.shared) {
+      secretCode = checkResponse.data.secretCode;
+    } else {
+      const password = prompt('공유 비밀번호를 입력하세요 (최소 4자리 이상)');
+
+      if (!password || password.length < 4) {
+        alert('비밀번호는 최소 4자리 이상 입력해야 합니다.');
+        return;
+      }
+
+      const createResponse = await triendApi({
+        url: `/api/planners/${planner.id}/share`,
+        method: 'post',
+        data: { password }
+      });
+
+      secretCode = createResponse.data.secretCode;
+    }
+
+    const shareUrl = `${window.location.origin}/planners/${planner.id}/share/${secretCode}`;
 
     window.Kakao.Share.sendDefault({
-    objectType: 'feed',
-    content: {
-      title: `📘 ${planner.name} 공유 (비밀번호: ${password})`,
-      description: [
-        `지역: ${planner.location}`,
-        `날짜: ${planner.startDay} ~ ${planner.endDay}`,
-      ].join('\n'),
-      imageUrl:
-        'https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png',
-      link: { webUrl: shareUrl },
-    },
-    buttons: [{ title: '세부 일정 확인하기', link: { webUrl: shareUrl } }],
-  })
-  }catch(err){
-    console.error('공유 링크 생성 실패', err)
-    alert('공유 링크 생성에 실패했습니다.')
+      objectType: 'feed',
+      content: {
+        title: `📘 ${planner.name} 공유 (비밀번호를 팀원에게 공유해 주세요!)`,
+        description: [
+          `지역: ${planner.location}`,
+          `날짜: ${planner.startDay} ~ ${planner.endDay}`,
+        ].join('\n'),
+        imageUrl:
+          'https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png',
+        link: { webUrl: shareUrl },
+      },
+      buttons: [{ title: '세부 일정 확인하기', link: { webUrl: shareUrl } }],
+    });
+  } catch (err) {
+    console.error('공유 링크 생성 실패', err);
+    alert('공유 링크 생성에 실패했습니다.');
   }
-}
+};
+
 </script>
 
 <style scoped>
