@@ -60,10 +60,9 @@ const router = createRouter({
       component: MyPageView,
     },
     {
-      path: '/planners/share/:plannerId',
+      path: '/planners/:plannerId/share/:secretCode',
       name: 'PlannerShareView',
       component: PlannerShareView,
-      props: true,
     },
   ],
 })

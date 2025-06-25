@@ -84,16 +84,6 @@ watch(
   { immediate: true },
 )
 
-watch(
-  paginatedPlans,
-  (newPlans) => {
-    if (newPlans.length > 0) {
-      loadImages(newPlans)
-    }
-  },
-  { immediate: true },
-)
-
 watch(currentPage, (newPage) => {
   const newDate = uniqueDates.value[newPage]
   emit('updateDate', newDate)
@@ -119,6 +109,17 @@ const loadImages = async (plans) => {
     console.error('이미지 로딩 실패', e)
   }
 }
+
+watch(
+  paginatedPlans,
+  (newPlans) => {
+    if (newPlans.length > 0) {
+      loadImages(newPlans)
+    }
+  },
+  { immediate: true },
+)
+
 
 watch(
   () => props.selectedPlan,
