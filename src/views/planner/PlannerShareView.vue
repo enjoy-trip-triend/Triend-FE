@@ -28,6 +28,20 @@
         </template>
       </div>
 
+      <!-- 편집자 목록 출력 -->
+      <div class="editor-info" v-if="editors.length > 0">
+        <h4>✍️ 현재 편집 중인 사용자</h4>
+        <ul>
+          <li
+            v-for="editor in editors"
+            :key="editor.sessionId"
+            :class="{ 'me': editor.sessionId === mySessionId }"
+          >
+            {{ editor.name }}<span v-if="editor.sessionId === mySessionId"> (me)</span>
+          </li>
+        </ul>
+      </div>
+
       <h3>{{ planner.name }}</h3>
       <div class="planner-meta">
         <div class="meta-item">
@@ -88,13 +102,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { triendApi } from '@/axios'
 import PlanTableSection from '@/components/planner/plan/PlanTableSection.vue'
 import PlanMapSection from '@/components/planner/plan/PlanMapSection.vue'
 import PlanCardSection from '@/components/planner/plan/PlanCardSection.vue'
 import UpdatePlanModal from '@/components/planner/plan/UpdatePlanModal.vue'
+import { sendScheduleUpdate, connectWebSocket, disconnectWebSocket } from '@/utils/websocket'
 
 const route = useRoute()
 const router = useRouter()
@@ -110,10 +125,10 @@ const errorMsg = ref('')
 const updatePlansVisible = ref(false)
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
 
-// 추가된 상태
 const selectedPlan = ref(null)
 const selectedDate = ref('')
 const currentView = ref('table')
+const editors = ref([])
 
 const toggleView = () => {
   if (currentView.value === 'table' && (!plans.value || plans.value.length === 0)) {
@@ -121,6 +136,23 @@ const toggleView = () => {
     return
   }
   currentView.value = currentView.value === 'table' ? 'map' : 'table'
+}
+
+const handleScheduleUpdate = (schedule) => {
+  if (schedule.action === 'UPDATE') {
+    const idx = plans.value.findIndex(p => p.id === schedule.id)
+    if (idx !== -1) {
+      plans.value[idx] = { ...plans.value[idx], ...schedule }
+    } else {
+      plans.value.push(schedule)
+    }
+  } else if (schedule.action === 'DELETE') {
+    plans.value = plans.value.filter(p => p.id !== schedule.scheduleId)
+  }
+}
+
+const handleEditorUpdate = (editorList) => {
+  editors.value = editorList
 }
 
 const verifyAndFetchPlanner = async () => {
@@ -140,6 +172,9 @@ const verifyAndFetchPlanner = async () => {
     plans.value = response.data.plans
     isEditable.value = response.data.isEditable
     joined.value = true
+
+    sessionStorage.setItem('plannerId', plannerId)
+    connectWebSocket(handleScheduleUpdate, handleEditorUpdate)
   } catch (err) {
     console.error('비밀번호 검증 실패', err)
     alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
@@ -170,7 +205,15 @@ const handleOpenUpdatePlansModal = () => {
 
 const handlePlansUpdate = (updatedPlans) => {
   plans.value = updatedPlans
+  updatedPlans.forEach(plan => {
+    sendScheduleUpdate(plan)
+  })
 }
+
+onUnmounted(() => {
+  disconnectWebSocket()
+})
+
 </script>
 
 <style scoped>
@@ -344,4 +387,34 @@ const handlePlansUpdate = (updatedPlans) => {
   background-color: #015f9b;
   transform: scale(1.1);
 }
+
+.editor-info {
+  background-color: #fffbe6;
+  border: 1px solid #ffe082;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.editor-info h4 {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.editor-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.editor-info li {
+  font-size: 14px;
+  color: #333;
+}
+
+.me {
+  font-weight: bold;
+  color: #1976d2;
+}
+
 </style>

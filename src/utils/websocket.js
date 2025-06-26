@@ -13,7 +13,6 @@ export function connectWebSocket(onScheduleUpdate, onEditorUpdate) {
       console.log('[WebSocket] Connected');
 
       const plannerId = sessionStorage.getItem('plannerId');
-      const userId = sessionStorage.getItem('userId');
 
       // 구독
       stompClient.subscribe(`/topic/planner/${plannerId}/schedule`, (msg) => {
@@ -27,7 +26,7 @@ export function connectWebSocket(onScheduleUpdate, onEditorUpdate) {
       // 참여 요청
       stompClient.publish({
         destination: '/app/planner/join',
-        body: JSON.stringify({ plannerId: Number(plannerId), userId: Number(userId) }),
+        body: JSON.stringify({ plannerId: Number(plannerId)}),
       });
     },
   });
@@ -38,7 +37,21 @@ export function connectWebSocket(onScheduleUpdate, onEditorUpdate) {
 export function sendScheduleUpdate(scheduleMessage) {
   stompClient.publish({
     destination: '/app/planner/schedule',
-    body: JSON.stringify(scheduleMessage),
+    body: JSON.stringify({
+      ...scheduleMessage,
+      action: 'UPDATE'
+    }),
+  });
+}
+
+export function sendScheduleDelete(scheduleId, plannerId) {
+  stompClient.publish({
+    destination: '/app/planner/schedule',
+    body: JSON.stringify({
+      plannerId: plannerId,
+      scheduleId: scheduleId,
+      action: 'DELETE'
+    }),
   });
 }
 
