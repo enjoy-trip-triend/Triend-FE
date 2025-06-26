@@ -56,6 +56,7 @@
               :plans="plans"
               :selectedPlan="selectedPlan"
               @selectPlan="selectedPlan = $event"
+              :isEditable="true"
             />
             <PlanMapSection
               v-if="currentView === 'map' && plans && plans.length > 0"
