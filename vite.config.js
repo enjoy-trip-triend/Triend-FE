@@ -30,7 +30,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: path => path.replace(/^\/vworld/, '')
-      }
+      },
+      '/triend-websocket': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })

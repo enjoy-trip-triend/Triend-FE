@@ -4,17 +4,17 @@ import { Client } from '@stomp/stompjs';
 
 let stompClient = null;
 
-export function connectWebSocket(onScheduleUpdate, onEditorUpdate) {
+// websocket.js에 연결 후, 연결 상태를 리턴하게 수정
+export function connectWebSocket(onScheduleUpdate, onEditorUpdate, onConnected) {
   stompClient = new Client({
-    webSocketFactory: () => new SockJS('http://localhost:8080/triend-websocket'),
+    webSocketFactory: () => new SockJS("http://localhost:8080/triend-websocket"),
     debug: (str) => console.log('[WebSocket] ', str),
     reconnectDelay: 5000,
     onConnect: () => {
-      console.log('[WebSocket] Connected');
+      console.log('[WebSocket] Connected ✅');
 
       const plannerId = sessionStorage.getItem('plannerId');
 
-      // 구독
       stompClient.subscribe(`/topic/planner/${plannerId}/schedule`, (msg) => {
         onScheduleUpdate(JSON.parse(msg.body));
       });
@@ -23,16 +23,25 @@ export function connectWebSocket(onScheduleUpdate, onEditorUpdate) {
         onEditorUpdate(JSON.parse(msg.body));
       });
 
-      // 참여 요청
       stompClient.publish({
         destination: '/app/planner/join',
-        body: JSON.stringify({ plannerId: Number(plannerId)}),
+        body: JSON.stringify({ plannerId: Number(plannerId) }),
       });
+
+      // 연결 완료 콜백 호출
+      if (onConnected) onConnected();
+    },
+    onWebSocketClose: (evt) => {
+      console.warn('[❌ WebSocket Closed]', evt);
+    },
+    onStompError: (frame) => {
+      console.error('[❌ STOMP ERROR]', frame);
     },
   });
 
   stompClient.activate();
 }
+
 
 export function sendScheduleUpdate(scheduleMessage) {
   stompClient.publish({
