@@ -12,8 +12,14 @@ export function connectWebSocket(onScheduleUpdate, onEditorUpdate, onConnected) 
     reconnectDelay: 5000,
     onConnect: () => {
       console.log('[WebSocket] Connected ✅');
-
       const plannerId = sessionStorage.getItem('plannerId');
+
+      stompClient.subscribe('/user/queue/my-session-id', (msg) => {
+        console.log('[WebSocket] My Session ID:', msg.body);
+        const sessionId = msg.body;
+        sessionStorage.setItem('mySessionId', sessionId);
+        if (onConnected) onConnected(sessionId);
+      });
 
       stompClient.subscribe(`/topic/planner/${plannerId}/schedule`, (msg) => {
         onScheduleUpdate(JSON.parse(msg.body));
@@ -27,9 +33,6 @@ export function connectWebSocket(onScheduleUpdate, onEditorUpdate, onConnected) 
         destination: '/app/planner/join',
         body: JSON.stringify({ plannerId: Number(plannerId) }),
       });
-
-      // 연결 완료 콜백 호출
-      if (onConnected) onConnected();
     },
     onWebSocketClose: (evt) => {
       console.warn('[❌ WebSocket Closed]', evt);

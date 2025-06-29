@@ -35,9 +35,10 @@
           <li
             v-for="editor in editors"
             :key="editor.sessionId"
-            :class="{ 'me': editor.sessionId === mySessionId }"
+            :class="{ me: isMe(editor.sessionId) }"
           >
-            {{ editor.name }}<span v-if="editor.sessionId === mySessionId"> (me)</span>
+            {{ editor.name }}
+            <span v-if="isMe(editor.sessionId)"> (me)</span>
           </li>
         </ul>
       </div>
@@ -101,7 +102,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { triendApi } from '@/axios'
@@ -124,6 +125,11 @@ const joined = ref(false)
 const errorMsg = ref('')
 const updatePlansVisible = ref(false)
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
+const mySessionId = ref('');
+const isMe = (sessionId: string) => {
+  if (!sessionId || !mySessionId.value) return false;
+  return sessionId.trim() === mySessionId.value.trim();
+};
 
 const selectedPlan = ref(null)
 const selectedDate = ref('')
@@ -152,6 +158,7 @@ const handleScheduleUpdate = (schedule) => {
 }
 
 const handleEditorUpdate = (editorList) => {
+  console.log('[📥 편집자 목록 수신]', editorList)
   editors.value = editorList
 }
 
@@ -174,7 +181,9 @@ const verifyAndFetchPlanner = async () => {
     joined.value = true
 
     sessionStorage.setItem('plannerId', plannerId)
-    connectWebSocket(handleScheduleUpdate, handleEditorUpdate)
+    connectWebSocket(handleScheduleUpdate, handleEditorUpdate, (sessionId) => {
+      mySessionId.value = sessionId
+    })
   } catch (err) {
     console.error('비밀번호 검증 실패', err)
     alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
