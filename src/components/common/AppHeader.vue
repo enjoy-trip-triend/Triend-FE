@@ -3,6 +3,9 @@
     <div class="logo"><RouterLink to="/">Triend</RouterLink></div>
     <nav class="nav-menu">
       <template v-if="isLoggedIn">
+        <RouterLink v-if="loginUser.role === 'ADMIN'" :to="{ name: 'AdminApiStatsView' }"
+          >관리자 페이지</RouterLink
+        >
         <RouterLink :to="{ name: 'PlannerView' }">내 플래너</RouterLink>
         <RouterLink :to="{ name: 'MyPageView' }">마이페이지</RouterLink>
         <span>{{ loginUser.email }}</span>
