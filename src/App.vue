@@ -20,7 +20,6 @@ import AdminHeader from '@/components/admin/AdminHeader.vue'
 
 const route = useRoute()
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
-console.log('isAdminRoute:', isAdminRoute)
 </script>
 
 <style scoped>
