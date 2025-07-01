@@ -277,26 +277,6 @@ watch([fromDate, toDate, selectedStat, selectedMember], ([from, to]) => {
   border-radius: 6px;
 }
 
-.search-results {
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  list-style: none;
-  padding: 0;
-  margin: 4px 0 0;
-  max-height: 150px;
-  overflow-y: auto;
-  width: 100%;
-}
-
-.search-results li {
-  padding: 8px;
-  cursor: pointer;
-}
-.search-results li:hover {
-  background-color: #f0f0f0;
-}
-
 .input-wrapper {
   display: flex;
   align-items: center;
@@ -307,17 +287,6 @@ watch([fromDate, toDate, selectedStat, selectedMember], ([from, to]) => {
 .input-wrapper input {
   width: 100%;
   padding-right: 28px;
-}
-
-.clear-btn {
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  background: transparent;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  color: #666;
 }
 
 .search-results {
