@@ -126,6 +126,7 @@ const fetchLogs = async () => {
   try {
     const { data } = await triendApi.get('/api/logs', { params })
     apiLogs.value = data
+    console.log('fetchLogs 실행')
   } catch (e) {
     console.error('API 로그 불러오기 실패', e)
   }
@@ -147,7 +148,7 @@ onMounted(async () => {
   fetchLogs()
 })
 
-watch([fromDate, toDate, memberKeyword], ([from, to]) => {
+watch([fromDate, toDate, selectedMember], ([from, to]) => {
   if (to < from) {
     alert('종료일시는 시작일시보다 늦어야 합니다.')
     toDate.value = from
