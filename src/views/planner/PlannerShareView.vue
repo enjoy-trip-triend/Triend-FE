@@ -46,15 +46,15 @@
           <ScheduleTableSection
             v-if="currentView === 'table'"
             :isEditable="isEditable"
-            :plans="plans"
+            :schedules="schedules"
             :selectedSchedule="selectedSchedule"
             @selectSchedule="selectedSchedule = $event"
             @openUpdateSchedulesModal="handleOpenUpdateSchedulesModal"
           />
 
           <ScheduleMapSection
-            v-if="currentView === 'map' && plans.length > 0"
-            :plans="plans"
+            v-if="currentView === 'map' && schedules.length > 0"
+            :schedules="schedules"
             :selectedSchedule="selectedSchedule"
             @selectSchedule="selectedSchedule = $event"
             v-model:selectedDate="selectedDate"
@@ -68,7 +68,7 @@
 
         <div class="right-section">
           <ScheduleCardSection
-            :plans="plans"
+            :schedules="schedules"
             :selectedSchedule="selectedSchedule"
             @selectSchedule="selectedSchedule = $event"
             v-model:selectedDate="selectedDate"
@@ -78,7 +78,7 @@
 
       <UpdatePlanModal
         v-if="updateSchedulesVisible"
-        :plans="plans"
+        :schedules="schedules"
         :planner="planner"
         @close="updateSchedulesVisible = false"
         @updateSchedules="handleSchedulesUpdate"
