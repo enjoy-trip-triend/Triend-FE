@@ -72,7 +72,7 @@ const router = createRouter({
       component: AdminApiStatsView,
       meta: { hideLayout: true },
     },
-        {
+    {
       path: '/admin/api/details',
       name: 'AdminApiDetailsView',
       component: AdminApiDetailsView,
@@ -83,23 +83,19 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const memberStore = useMemberStore()
-  const token = localStorage.getItem('accessToken')
 
-  // 자동 로그인 복구 (store에 user 정보가 없을 경우만)
-  if (token && !memberStore.user) {
-    memberStore.restoreToken(token)
+  if (memberStore.tokens?.accessToken && !memberStore.loginUser?.email) {
     try {
       const res = await triendApi.get('/api/member/details')
-      memberStore.setUser(res.data)
+      memberStore.setLoginUser(res.data)
     } catch (err) {
-      memberStore.logout()
+      await memberStore.logout()
       console.log('자동 로그인 실패:', err)
+      return next('/')
     }
   }
 
-  // ✅ 관리자 권한 체크는 user 복구 이후에 해야 함
-  const loginUser = memberStore.loginUser
-  if (to.path.startsWith('/admin') && loginUser?.role !== 'ADMIN') {
+  if (to.path.startsWith('/admin') && memberStore.loginUser?.role !== 'ADMIN') {
     alert('관리자만 접근 가능합니다.')
     return next('/')
   }
