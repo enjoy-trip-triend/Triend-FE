@@ -4,7 +4,7 @@
     <SideBar class="sidebar">
       <h2>📘 내 플래너</h2>
       <ul class="planner-list">
-        <li v-for="planner in planners" :key="planner.id" @click="fetchPlans(planner)">
+        <li v-for="planner in planners" :key="planner.id" @click="fetchSchedules(planner)">
           <div class="planner-header">
             <span class="planner-name">{{ planner.name }}</span>
             <img
@@ -40,28 +40,28 @@
         />
 
         <!-- 플래 수정 모델 -->
-        <UpdatePlanModal
-          v-if="updatePlansVisible"
-          :plans="plans"
+        <UpdateScheduleModal
+          v-if="updateSchedulesVisible"
+          :schedules="schedules"
           :planner="currentPlanner"
-          @close="updatePlansVisible = false"
-          @updatePlans="handlePlansUpdate"
+          @close="updateSchedulesVisible = false"
+          @updateSchedules="handleSchedulesUpdate"
         />
         <!-- 메인 컨텐츠 분할 (6:4 비율) -->
         <div class="planner-sections">
           <div class="left-section">
-            <PlanTableSection
+            <ScheduleTableSection
               v-if="currentView === 'table'"
-              @openUpdatePlansModal="showPlanUpdateModal"
-              :plans="plans"
-              :selectedPlan="selectedPlan"
-              @selectPlan="selectedPlan = $event"
+              @openUpdateSchedulesModal="showScheduleUpdateModal"
+              :schedules="schedules"
+              :selectedSchedule="selectedSchedule"
+              @selectSchedule="selectedSchedule = $event"
             />
-            <PlanMapSection
-              v-if="currentView === 'map' && plans && plans.length > 0"
-              :plans="plans"
-              :selectedPlan="selectedPlan"
-              @selectPlan="selectedPlan = $event"
+            <ScheduleMapSection
+              v-if="currentView === 'map' && schedules && schedules.length > 0"
+              :schedules="schedules"
+              :selectedSchedule="selectedSchedule"
+              @selectSchedule="selectedSchedule = $event"
               v-model:selectedDate="selectedDate"
             />
             <button class="circle-toggle-btn" @click="toggleView">
@@ -70,12 +70,12 @@
             </button>
           </div>
           <div class="right-section">
-            <PlanCardSection
-              :plans="plans"
-              :selectedPlan="selectedPlan"
-              @selectPlan="selectedPlan = $event"
+            <!-- <ScheduleCardSection
+              :schedules="schedules"
+              :selectedSchedule="selectedSchedule"
+              @selectSchedule="selectedSchedule = $event"
               v-model:selectedDate="selectedDate"
-            />
+            /> -->
           </div>
         </div>
       </template>
@@ -86,27 +86,27 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import SideBar from '@/components/common/SideBar.vue'
-import PlanCardSection from '@/components/planner/plan/PlanCardSection.vue'
-import PlanTableSection from '@/components/planner/plan/PlanTableSection.vue'
+// import ScheduleCardSection from '@/components/planner/schedule/ScheduleCardSection.vue'
+import ScheduleTableSection from '@/components/planner/schedule/ScheduleTableSection.vue'
 import { triendApi } from '@/axios/index.js'
 import UpdatePlannerModal from '@/components/planner/UpdatePlannerModal.vue'
 import { useMemberStore } from '@/stores/member.js'
 import { useRouter } from 'vue-router'
-import UpdatePlanModal from '@/components/planner/plan/UpdatePlanModal.vue'
-import PlanMapSection from '@/components/planner/plan/PlanMapSection.vue'
+import UpdateScheduleModal from '@/components/planner/schedule/UpdateScheduleModal.vue'
+import ScheduleMapSection from '@/components/planner/schedule/ScheduleMapSection.vue'
 const router = useRouter()
 const planners = ref([])
-const plans = ref([])
+const schedules = ref([])
 const memberStore = useMemberStore()
 const currentPlanner = ref([])
 const currentView = ref('table')
 const updatePlannerVisible = ref(false)
-const updatePlansVisible = ref(false)
-const selectedPlan = ref(null)
+const updateSchedulesVisible = ref(false)
+const selectedSchedule = ref(null)
 const selectedDate = ref('')
 
 const toggleView = () => {
-  if (currentView.value === 'table' && (!plans.value || plans.value.length === 0)) {
+  if (currentView.value === 'table' && (!schedules.value || schedules.value.length === 0)) {
     alert('플랜이 없어서 지도를 표시할 수 없습니다.')
     return
   }
@@ -134,18 +134,18 @@ const fetchPlanners = async () => {
   }
 }
 
-const fetchPlans = async (planner) => {
+const fetchSchedules = async (planner) => {
   currentPlanner.value = null
-  plans.value = []
+  schedules.value = []
   await nextTick()
   currentPlanner.value = planner
 
   try {
     const response = await triendApi({
-      url: `/api/planners/${planner.id}/plans`,
+      url: `/api/planners/${planner.id}/schedules`,
       method: 'get',
     })
-    plans.value = response.data
+    schedules.value = response.data
   } catch (err) {
     console.error('플랜 불러오기 실패:', err)
   }
@@ -166,8 +166,8 @@ const handlePlannerUpdate = async (formData) => {
   }
 }
 
-const showPlanUpdateModal = () => {
-  updatePlansVisible.value = true
+const showScheduleUpdateModal = () => {
+  updateSchedulesVisible.value = true
 }
 
 const handlePlannerDelete = async (planner) => {
@@ -182,8 +182,8 @@ const handlePlannerDelete = async (planner) => {
   }
 }
 
-const handlePlansUpdate = (updatedPlans) => {
-  plans.value = updatedPlans
+const handleSchedulesUpdate = (updatedSchedules) => {
+  schedules.value = updatedSchedules
 }
 
 const sharePlanner = async (planner) => {
