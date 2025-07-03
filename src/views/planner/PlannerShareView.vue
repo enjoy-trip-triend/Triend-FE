@@ -58,20 +58,20 @@
       <!-- Map / Table / Card 뷰 -->
       <div class="planner-sections">
         <div class="left-section">
-          <PlanTableSection
+          <ScheduleTableSection
             v-if="currentView === 'table'"
             :isEditable="isEditable"
-            :plans="plans"
-            :selectedPlan="selectedPlan"
-            @selectPlan="selectedPlan = $event"
-            @openUpdatePlansModal="handleOpenUpdatePlansModal"
+            :schedules="schedules"
+            :selectedSchedule="selectedSchedule"
+            @selectSchedule="selectedSchedule = $event"
+            @openUpdateSchedulesModal="handleOpenUpdateSchedulesModal"
           />
 
-          <PlanMapSection
-            v-if="currentView === 'map' && plans.length > 0"
-            :plans="plans"
-            :selectedPlan="selectedPlan"
-            @selectPlan="selectedPlan = $event"
+          <ScheduleMapSection
+            v-if="currentView === 'map' && schedules.length > 0"
+            :schedules="schedules"
+            :selectedSchedule="selectedSchedule"
+            @selectSchedule="selectedSchedule = $event"
             v-model:selectedDate="selectedDate"
           />
 
@@ -82,21 +82,21 @@
         </div>
 
         <div class="right-section">
-          <PlanCardSection
-            :plans="plans"
-            :selectedPlan="selectedPlan"
-            @selectPlan="selectedPlan = $event"
+          <ScheduleCardSection
+            :schedules="schedules"
+            :selectedSchedule="selectedSchedule"
+            @selectSchedule="selectedSchedule = $event"
             v-model:selectedDate="selectedDate"
           />
         </div>
       </div>
 
       <UpdatePlanModal
-        v-if="updatePlansVisible"
-        :plans="plans"
+        v-if="updateSchedulesVisible"
+        :schedules="schedules"
         :planner="planner"
-        @close="updatePlansVisible = false"
-        @updatePlans="handlePlansUpdate"
+        @close="updateSchedulesVisible = false"
+        @updateSchedules="handleSchedulesUpdate"
       />
     </div>
   </div>
@@ -106,11 +106,12 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { triendApi } from '@/axios'
-import PlanTableSection from '@/components/planner/plan/PlanTableSection.vue'
-import PlanMapSection from '@/components/planner/plan/PlanMapSection.vue'
-import PlanCardSection from '@/components/planner/plan/PlanCardSection.vue'
-import UpdatePlanModal from '@/components/planner/plan/UpdatePlanModal.vue'
+
 import { sendScheduleUpdate, connectWebSocket, disconnectWebSocket } from '@/utils/websocket'
+import ScheduleTableSection from '@/components/planner/schedule/ScheduleTableSection.vue'
+import ScheduleMapSection from '@/components/planner/schedule/ScheduleMapSection.vue'
+import ScheduleCardSection from '@/components/planner/schedule/ScheduleCardSection.vue'
+import UpdatePlanModal from '@/components/planner/schedule/UpdateScheduleModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -120,10 +121,10 @@ const secretCode = route.params.secretCode
 const password = ref('')
 const planner = ref({})
 const isEditable = ref(false)
-const plans = ref([])
+const schedules = ref([])
 const joined = ref(false)
 const errorMsg = ref('')
-const updatePlansVisible = ref(false)
+const updateSchedulesVisible = ref(false)
 const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
 const mySessionId = ref('');
 const isMe = (sessionId: string) => {
@@ -131,13 +132,14 @@ const isMe = (sessionId: string) => {
   return sessionId.trim() === mySessionId.value.trim();
 };
 
-const selectedPlan = ref(null)
+// 추가된 상태
+const selectedSchedule = ref(null)
 const selectedDate = ref('')
 const currentView = ref('table')
 const editors = ref([])
 
 const toggleView = () => {
-  if (currentView.value === 'table' && (!plans.value || plans.value.length === 0)) {
+  if (currentView.value === 'table' && (!schedules.value || schedules.value.length === 0)) {
     alert('플랜이 없어서 지도를 표시할 수 없습니다.')
     return
   }
@@ -146,14 +148,14 @@ const toggleView = () => {
 
 const handleScheduleUpdate = (schedule) => {
   if (schedule.action === 'UPDATE') {
-    const idx = plans.value.findIndex(p => p.id === schedule.id)
+    const idx = schedules.value.findIndex(p => p.id === schedule.id)
     if (idx !== -1) {
-      plans.value[idx] = { ...plans.value[idx], ...schedule }
+      schedules.value[idx] = { ...schedules.value[idx], ...schedule }
     } else {
-      plans.value.push(schedule)
+      schedules.value.push(schedule)
     }
   } else if (schedule.action === 'DELETE') {
-    plans.value = plans.value.filter(p => p.id !== schedule.scheduleId)
+    schedules.value = schedules.value.filter(p => p.id !== schedule.scheduleId)
   }
 }
 
@@ -176,7 +178,7 @@ const verifyAndFetchPlanner = async () => {
     })
 
     planner.value = response.data.planner
-    plans.value = response.data.plans
+    schedules.value = response.data.schedules
     isEditable.value = response.data.isEditable
     joined.value = true
 
@@ -208,14 +210,14 @@ const goLogin = () => {
   router.push({ name: 'LoginView' })
 }
 
-const handleOpenUpdatePlansModal = () => {
-  updatePlansVisible.value = true
+const handleOpenUpdateSchedulesModal = () => {
+  updateSchedulesVisible.value = true
 }
 
-const handlePlansUpdate = (updatedPlans) => {
-  plans.value = updatedPlans
-  updatedPlans.forEach(plan => {
-    sendScheduleUpdate(plan)
+const handleSchedulesUpdate = (updatedSchedules) => {
+  schedules.value = updatedSchedules
+  updatedSchedules.forEach(schedule => {
+    sendScheduleUpdate(schedule)
   })
 }
 

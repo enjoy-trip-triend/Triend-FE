@@ -1,8 +1,8 @@
 <template>
-  <div class="modal-overlay" id="planCreateModal">
+  <div class="modal-overlay" id="scheduleCreateModal">
     <div class="modal">
       <h2>일정 추가</h2>
-      <form @submit.prevent="createPlan" class="planner-form">
+      <form @submit.prevent="createSchedule" class="planner-form">
         <!-- 숨겨진 필드 -->
         <input type="hidden" v-model="form.plannerId" />
         <input type="hidden" v-model="form.lat" />
@@ -63,7 +63,7 @@ import { defineEmits, defineProps } from 'vue'
 import { triendApi } from '@/axios/index.js'
 import { searchImage } from '@/utils/imageSearch.js'
 
-const emit = defineEmits(['close', 'showPlannerListModal', 'createPlan'])
+const emit = defineEmits(['close', 'showPlannerListModal', 'createSchedule'])
 
 const props = defineProps({
   planner: Object,
@@ -88,7 +88,7 @@ const setMinEndTime = () => {
     form.value.endTime = form.value.startTime
   }
 }
-async function createPlan() {
+async function createSchedule() {
   // 1. 플랜 먼저 생성
   const requestData = {
     plannerId: form.value.plannerId,
@@ -103,15 +103,15 @@ async function createPlan() {
     placeUrl: form.value.placeUrl,
   }
 
-  let planId
+  let scheduleId
   try {
-    const res = await triendApi.post('/api/plans', requestData)
-    planId = res.data
+    const res = await triendApi.post('/api/schedules', requestData)
+    scheduleId = res.data
 
     alert('성공적으로 생성되었습니다!')
     emit('close')
     emit('showPlannerListModal')
-    emit('createPlan', { ...requestData, id: planId })
+    emit('createSchedule', { ...requestData, id: scheduleId })
   } catch (err) {
     console.error('플랜 생성 실패:', err)
     alert('오류 발생: ' + (err.response?.data?.message || err.message))
@@ -133,7 +133,7 @@ async function createPlan() {
     .post(
       '/api/s3/proxy-upload',
       {
-        planId,
+        scheduleId,
         imageUrls,
       },
       {
@@ -223,7 +223,7 @@ async function createPlan() {
 }
 
 /* 플랜 추가 모달 style */
-#planCreateModal .modal {
+#scheduleCreateModal .modal {
   width: 400px;
   padding: 30px;
   border-radius: 10px;
@@ -232,18 +232,18 @@ async function createPlan() {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-#planCreateModal .form-group {
+#scheduleCreateModal .form-group {
   margin-bottom: 16px;
 }
 
-#planCreateModal label {
+#scheduleCreateModal label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
 }
 
-#planCreateModal input,
-#planCreateModal textarea {
+#scheduleCreateModal input,
+#scheduleCreateModal textarea {
   width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
@@ -251,7 +251,7 @@ async function createPlan() {
   font-size: 14px;
 }
 
-#planCreateModal .button-group {
+#scheduleCreateModal .button-group {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;

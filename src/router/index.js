@@ -10,6 +10,8 @@ import PlannerShareView from '@/views/planner/PlannerShareView.vue'
 
 import { useMemberStore } from '@/stores/member'
 import { triendApi } from '@/axios'
+import AdminApiStatsView from '@/views/admin/AdminApiStatsView.vue'
+import AdminApiDetailsView from '@/views/admin/AdminApiDetailsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -64,23 +66,38 @@ const router = createRouter({
       name: 'PlannerShareView',
       component: PlannerShareView,
     },
+    {
+      path: '/admin/api/stats',
+      name: 'AdminApiStatsView',
+      component: AdminApiStatsView,
+      meta: { hideLayout: true },
+    },
+    {
+      path: '/admin/api/details',
+      name: 'AdminApiDetailsView',
+      component: AdminApiDetailsView,
+      meta: { hideLayout: true },
+    },
   ],
 })
 
 router.beforeEach(async (to, from, next) => {
   const memberStore = useMemberStore()
-  const token = localStorage.getItem('accessToken')
 
-  if (token && !memberStore.user) {
-    memberStore.restoreToken(token)
+  if (memberStore.tokens?.accessToken && !memberStore.loginUser?.email) {
     try {
       const res = await triendApi.get('/api/member/details')
-      memberStore.restoreToken(token)
-      memberStore.setUser(res.data)
+      memberStore.setLoginUser(res.data)
     } catch (err) {
-      memberStore.logout()
+      await memberStore.logout()
       console.log('자동 로그인 실패:', err)
+      return next('/')
     }
+  }
+
+  if (to.path.startsWith('/admin') && memberStore.loginUser?.role !== 'ADMIN') {
+    alert('관리자만 접근 가능합니다.')
+    return next('/')
   }
 
   next()

@@ -5,22 +5,11 @@
     <form @submit.prevent="onLogin" class="login-form">
       <div class="input-group">
         <label for="email">이메일</label>
-        <input
-          type="text"
-          id="email"
-          v-model="email"
-          placeholder="example@domain.com"
-          required
-        />
+        <input type="text" id="email" v-model="email" placeholder="example@domain.com" required />
       </div>
       <div class="input-group">
         <label for="password">비밀번호</label>
-        <input
-          type="password"
-          id="password"
-          v-model="password"
-          required
-        />
+        <input type="password" id="password" v-model="password" required />
       </div>
       <div class="options">
         <label>
@@ -41,11 +30,10 @@
 <script setup>
 import { useMemberStore } from '@/stores/member'
 import { ref } from 'vue'
-import { useRouter, useRoute  } from 'vue-router'
+import { useRouter} from 'vue-router'
 
 const memberStore = useMemberStore()
 const router = useRouter()
-const route  = useRoute()
 const email = ref(localStorage.getItem('rememberedEmail') || '')
 const password = ref('')
 const rememberMe = ref(!!email.value)
@@ -65,22 +53,28 @@ async function onLogin() {
     } else {
       localStorage.removeItem('rememberedEmail')
     }
-    router.back()
+
+    // role 기반 라우팅
+    const role = memberStore.loginUser?.role
+    console.log('로그인 성공, 사용자 역할:', role)
+    if (role === 'ADMIN') {
+      router.replace('/admin/api/stats') // 관리자
+    } else {
+      router.replace('/') // 일반 사용자
+    }
   } catch (err) {
     console.error(err)
     hasError.value = true
-  
   }
 }
 </script>
-
 
 <style scoped>
 .login-box {
   width: 100%;
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   padding: 30px 20px;
 }
 
@@ -138,7 +132,7 @@ async function onLogin() {
   cursor: pointer;
 }
 
-.options label input[type="checkbox"] {
+.options label input[type='checkbox'] {
   margin-right: 6px;
 }
 

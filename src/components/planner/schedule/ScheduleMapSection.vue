@@ -1,5 +1,5 @@
 <template>
-  <div class="plan-map-section">
+  <div class="schedule-map-section">
     <!-- 🗕️ 날짜 선택 UI -->
     <div class="date-selector-ui">
       <label for="date-select">🗕️ 날짜 선택: </label>
@@ -22,12 +22,12 @@ const routeCache = new Map() // cache
 import { onMounted, ref, watch, computed, nextTick } from 'vue'
 import axios from 'axios'
 
-const emit = defineEmits(['updateDate', 'selectPlan', 'update:selectedDate'])
+const emit = defineEmits(['updateDate', 'selectSchedule', 'update:selectedDate'])
 
 const props = defineProps({
-  plans: Array,
+  schedules: Array,
   selectedDate: String,
-  selectedPlan: Object,
+  selectedSchedule: Object,
 })
 
 const mapContainer = ref(null)
@@ -35,12 +35,12 @@ const selectedDateLocal = ref(props.selectedDate)
 const markerMap = new Map()
 
 const uniqueDates = computed(() => {
-  const dateSet = new Set(props.plans.map((p) => p.date))
+  const dateSet = new Set(props.schedules.map((p) => p.date))
   return [...dateSet].sort()
 })
 
-const filteredPlans = computed(() => {
-  return props.plans.filter((p) => p.date === selectedDateLocal.value)
+const filteredSchedules = computed(() => {
+  return props.schedules.filter((p) => p.date === selectedDateLocal.value)
 })
 
 const map = ref(null)
@@ -49,10 +49,10 @@ let markers = []
 let infoWindows = []
 
 watch(
-  () => props.selectedPlan,
-  (plan) => {
-    if (!plan) return
-    const marker = markerMap.get(plan.id)
+  () => props.selectedSchedule,
+  (schedule) => {
+    if (!schedule) return
+    const marker = markerMap.get(schedule.id)
     if (marker) {
       window.kakao.maps.event.trigger(marker, 'click')
     }
@@ -74,7 +74,7 @@ watch(selectedDateLocal, (newVal) => {
 })
 
 watch(
-  () => props.plans,
+  () => props.schedules,
   async () => {
     await nextTick()
     if (uniqueDates.value.length && !uniqueDates.value.includes(selectedDateLocal.value)) {
@@ -105,35 +105,35 @@ onMounted(() => {
 
 function loadMap() {
   if (!window.kakao || !window.kakao.maps) return
-  const plans = filteredPlans.value
-  if (plans.length === 0 || !mapContainer.value) return
+  const schedules = filteredSchedules.value
+  if (schedules.length === 0 || !mapContainer.value) return
 
   const bounds = new window.kakao.maps.LatLngBounds()
-  plans.forEach((p) => bounds.extend(new window.kakao.maps.LatLng(p.lat, p.lon)))
+  schedules.forEach((schedule) => bounds.extend(new window.kakao.maps.LatLng(schedule.place?.latitude, schedule.place?.longitude)))
 
   map.value = new window.kakao.maps.Map(mapContainer.value, {
-    center: new window.kakao.maps.LatLng(plans[0].lat, plans[0].lon),
+    center: new window.kakao.maps.LatLng(schedules[0].place?.latitude, schedules[0].place?.longitude),
     level: 5,
   })
 
   map.value.setBounds(bounds)
 
-  drawPlansOnMap(plans)
-  requestDirectionsForSegments(plans)
+  drawSchedulesOnMap(schedules)
+  requestDirectionsForSegments(schedules)
 }
 
 const overlayStates = ref([])
 
-function drawPlansOnMap(plans) {
-  overlayStates.value = plans.map(() => false)
+function drawSchedulesOnMap(schedules) {
+  overlayStates.value = schedules.map(() => false)
   // 기존 마커, 오버레이 제거
   markers.forEach((m) => m.setMap(null))
   infoWindows.forEach((w) => w.setMap(null))
   markers = []
   infoWindows = []
 
-  plans.forEach((plan, index) => {
-    const position = new window.kakao.maps.LatLng(plan.lat, plan.lon)
+  schedules.forEach((schedule, index) => {
+    const position = new window.kakao.maps.LatLng(schedule.place?.latitude, schedule.place?.longitude)
 
     // ✅ 마커 번호 이미지 설정 (스프라이트 방식)
     const imageSrc =
@@ -154,15 +154,15 @@ function drawPlansOnMap(plans) {
       image: markerImage,
     })
     markers.push(marker)
-    markerMap.set(plan.id, marker)
+    markerMap.set(schedule.id, marker)
     // ✅ 커스텀 오버레이 내용 생성
     const content = document.createElement('div')
     content.className = 'custom-overlay'
     content.innerHTML = `
-      <div class="overlay-header">${index + 1}. ${plan.placeName}</div>
+      <div class="overlay-header">${index + 1}. ${schedule.place?.placeName}</div>
       <div class="overlay-body">
-        <p><strong>🕒 ${plan.startTime} ~ ${plan.endTime}</strong></p>
-        <p>📝 ${plan.content.replace(/\n/g, '<br>')}</p>
+        <p><strong>🕒 ${schedule.startTime}</strong></p>
+        <p>📝 ${schedule.content.replace(/\n/g, '<br>')}</p>
         <button class="close-btn">✖</button>
       </div>
     `
@@ -181,10 +181,10 @@ function drawPlansOnMap(plans) {
       const content = document.createElement('div')
       content.className = 'custom-overlay'
       content.innerHTML = `
-    <div class="overlay-header">${index + 1}. ${plan.placeName}</div>
+    <div class="overlay-header">${index + 1}. ${schedule.place?.placeName}</div>
     <div class="overlay-body">
-       <p><strong>🕒 ${plan.startTime.slice(0, 5)} ~ ${plan.endTime.slice(0, 5)}</strong></p>
-      <p>📝 ${plan.content.replace(/\n/g, '<br>')}</p>
+       <p><strong>🕒 ${schedule.startTime.slice(0, 5)}</strong></p>
+      <p>📝 ${schedule.content.replace(/\n/g, '<br>')}</p>
       <button class="close-btn">✖</button>
     </div>
   `
@@ -207,7 +207,7 @@ function drawPlansOnMap(plans) {
         })
       }
 
-      emit('selectPlan', plan)
+      emit('selectSchedule', schedule)
     })
 
     const closeBtn = content.querySelector('.close-btn')
@@ -220,16 +220,16 @@ function drawPlansOnMap(plans) {
   })
 }
 
-async function requestDirectionsForSegments(plans) {
-  if (plans.length < 2) return
+async function requestDirectionsForSegments(schedules) {
+  if (schedules.length < 2) return
 
   polylineList.forEach((line) => line.setMap(null))
   polylineList = []
 
-  for (let i = 0; i < plans.length - 1; i++) {
-    const origin = plans[i]
-    const destination = plans[i + 1]
-    const cacheKey = `${origin.lon},${origin.lat}-${destination.lon},${destination.lat}`
+  for (let i = 0; i < schedules.length - 1; i++) {
+    const origin = schedules[i]
+    const destination = schedules[i + 1]
+    const cacheKey = `${origin.place?.longitude},${origin.place?.latitude}-${destination.place?.longitude},${destination.place?.latitude}`
 
     if (routeCache.has(cacheKey)) {
       const cachedPath = routeCache.get(cacheKey)
@@ -243,8 +243,8 @@ async function requestDirectionsForSegments(plans) {
           Authorization: `KakaoAK ${import.meta.env.VITE_KAKAO_REST_KEY}`,
         },
         params: {
-          origin: `${origin.lon},${origin.lat}`,
-          destination: `${destination.lon},${destination.lat}`,
+          origin: `${origin.place?.longitude},${origin.place?.latitude}`,
+          destination: `${destination.place?.longitude},${destination.place?.latitude}`,
           priority: 'RECOMMEND',
         },
       })
@@ -286,7 +286,7 @@ function drawPolyline(path) {
 </script>
 
 <style scoped>
-.plan-map-section {
+.schedule-map-section {
   display: flex;
   flex-direction: column;
   height: 100%;
