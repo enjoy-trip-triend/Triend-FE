@@ -125,8 +125,18 @@ const schedules = ref([])
 const joined = ref(false)
 const errorMsg = ref('')
 const updateSchedulesVisible = ref(false)
-const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
+const isLoggedIn = computed(() => {
+  const memberStr = localStorage.getItem('member')
+  if (!memberStr) return false
+  try {
+    const member = JSON.parse(memberStr)
+    return member.isLoggedIn === true
+  } catch (e) {
+    return false
+  }
+})
 const mySessionId = ref('');
+
 const isMe = (sessionId: string) => {
   if (!sessionId || !mySessionId.value) return false;
   return sessionId.trim() === mySessionId.value.trim();
