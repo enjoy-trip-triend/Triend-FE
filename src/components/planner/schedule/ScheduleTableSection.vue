@@ -1,8 +1,8 @@
 <template>
-  <section class="plan-table">
+  <section class="schedule-table">
     <div class="table-header">
       <h3>📅 여행 계획표</h3>
-      <button v-if="isEditable" class="edit-btn" @click="openUpdatePlansModal">수정</button>
+      <button v-if="isEditable" class="edit-btn" @click="openUpdateSchedulesModal">수정</button>
     </div>
     <table>
       <thead>
@@ -15,31 +15,31 @@
         </tr>
       </thead>
       <tbody>
-        <template v-for="([date, plans], index) in groupedPlans" :key="date">
+        <template v-for="([date, schedules], index) in groupedSchedules" :key="date">
           <tr
-            v-for="(plan, idx) in plans"
-            :key="plan.id"
-            :id="`row-${plan.id}`"
-            :class="{ selected: plan.id === selectedPlan?.id }"
-            @click="$emit('selectPlan', plan)"
+            v-for="(schedule, idx) in schedules"
+            :key="schedule.id"
+            :id="`row-${schedule.id}`"
+            :class="{ selected: schedule.id === selectedSchedule?.id }"
+            @click="$emit('selectSchedule', schedule)"
           >
             <td
               v-if="idx === 0"
-              :rowspan="plans.length"
+              :rowspan="schedules.length"
               class="date-group"
               :class="{ odd: index % 2 === 0, even: index % 2 !== 0 }"
             >
               {{ index + 1 }}일차<br />({{ date }})
             </td>
-            <td>{{ formatTime(plan.startTime) }} ~ {{ formatTime(plan.endTime) }}</td>
+            <td>{{ formatTime(schedule.startTime) }}</td>
             <td>
-              <a v-if="plan.placeUrl" class="place-url" :href="plan.placeUrl" target="_blank">
-                {{ plan.placeName }}
+              <a v-if="schedule.place" class="place-url" :href="`http://place.map.kakao.com/` + schedule.place?.kakaoId" target="_blank">
+                {{ schedule.place?.placeName }}
               </a>
-              <span v-else>{{ plan.placeName }}</span>
+              <span v-else>{{ schedule.place?.placeName }}</span>
             </td>
-            <td>{{ plan.address }}</td>
-            <td>{{ plan.content }}</td>
+            <td>{{ schedule.place?.addressName }}</td>
+            <td>{{ schedule.content }}</td>
           </tr>
         </template>
       </tbody>
@@ -51,35 +51,35 @@
 import { computed, watch, nextTick } from 'vue'
 
 const props = defineProps({
-  plans: Array,
-  selectedPlan: Object,
+  schedules: Array,
+  selectedSchedule: Object,
   isEditable: Boolean,
 })
 
-const emit = defineEmits(['openUpdatePlansModal', 'selectPlan'])
+const emit = defineEmits(['openUpdateSchedulesModal', 'selectSchedule'])
 
 watch(
-  () => props.selectedPlan,
-  async (plan) => {
-    if (!plan) return
+  () => props.selectedSchedule,
+  async (schedule) => {
+    if (!schedule) return
     await nextTick()
-    const el = document.getElementById(`row-${plan.id}`)
+    const el = document.getElementById(`row-${schedule.id}`)
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   },
 )
 
-const openUpdatePlansModal = () => {
-  emit('openUpdatePlansModal')
+const openUpdateSchedulesModal = () => {
+  emit('openUpdateSchedulesModal')
 }
 
 // ✅ 날짜 기준 그룹핑
-const groupedPlans = computed(() => {
+const groupedSchedules = computed(() => {
   const map = new Map()
-  props.plans.forEach((plan) => {
-    if (!map.has(plan.date)) {
-      map.set(plan.date, [])
+  props.schedules.forEach((schedule) => {
+    if (!map.has(schedule.date)) {
+      map.set(schedule.date, [])
     }
-    map.get(plan.date).push(plan)
+    map.get(schedule.date).push(schedule)
   })
   return Array.from(map.entries())
 })
@@ -92,7 +92,7 @@ const formatTime = (isoString) => {
 </script>
 
 <style scoped>
-.plan-table {
+.schedule-table {
   flex: 1;
   background-color: #ffffff;
   border-radius: 10px;
@@ -102,24 +102,24 @@ const formatTime = (isoString) => {
   max-height: 100%;
 }
 
-.plan-table h3 {
+.schedule-table h3 {
   margin-bottom: 15px;
   color: #0288d1;
 }
 
-.plan-table table {
+.schedule-table table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.plan-table th,
-.plan-table td {
+.schedule-table th,
+.schedule-table td {
   border: 1px solid #ddd;
   padding: 10px;
   text-align: center;
 }
 
-.plan-table th {
+.schedule-table th {
   background-color: #e1f5fe;
 }
 

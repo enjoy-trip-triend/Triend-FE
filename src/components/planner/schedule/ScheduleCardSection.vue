@@ -1,5 +1,5 @@
 <template>
-  <section class="plan-cards">
+  <section class="schedule-cards">
     <div class="img-title">
       <h3>🗺️ 이미지 뷰</h3>
     </div>
@@ -11,34 +11,34 @@
         <button @click="nextPage" :disabled="currentPage >= uniqueDates.length - 1">⏩</button>
       </div>
       <div
-        v-for="plan in paginatedPlans"
-        :key="plan.id"
-        :id="`card-${plan.id}`"
-        class="plan-card"
-        @click="$emit('selectPlan', plan)"
-        :class="{ selected: plan.id === selectedPlan?.id }"
+        v-for="schedule in paginatedSchedules"
+        :key="schedule.id"
+        :id="`card-${schedule.id}`"
+        class="schedule-card"
+        @click="$emit('selectSchedule', schedule)"
+        :class="{ selected: schedule.id === selectedSchedule?.id }"
       >
-        <div class="plan-title">
-          <a v-if="plan.placeUrl" class="place-url" :href="plan.placeUrl" target="_blank">
-            <span class="card-title">{{ plan.placeName }}</span>
+        <div class="schedule-title">
+          <a v-if="schedule.placeUrl" class="place-url" :href="schedule.placeUrl" target="_blank">
+            <span class="card-title">{{ schedule.placeName }}</span>
           </a>
-          <span v-else class="card-title">{{ plan.placeName }}</span>
+          <span v-else class="card-title">{{ schedule.placeName }}</span>
 
           <span class="card-time">
-            🕒 {{ formatTime(plan.startTime) }} ~ {{ formatTime(plan.endTime) }}</span
-          >
+            🕒 {{ formatTime(schedule.startTime) }}
+          </span>
         </div>
 
-        <div class="plan-item">
+        <div class="schedule-item">
           <!-- 🔷 캐러셀 방식 -->
           <v-carousel class="custom-carousel" show-arrows="hover">
             <v-carousel-item
-              v-for="(url, i) in imageMap[plan.id] || []"
+              v-for="(url, i) in imageMap[schedule.id] || []"
               :key="i"
               :src="url"
               cover
             />
-            <v-carousel-item v-if="!imageMap[plan.id]?.length">
+            <v-carousel-item v-if="!imageMap[schedule.id]?.length">
               <div style="text-align: center; padding: 60px">이미지를 추가해주세요.</div>
             </v-carousel-item>
           </v-carousel>
@@ -55,21 +55,21 @@ import qs from 'qs'
 
 // ✅ 부모 컴포넌트에서 받아오는 데이터
 const props = defineProps({
-  plans: Array,
-  selectedPlan: Object,
+  schedules: Array,
+  selectedSchedule: Object,
   selectedDate: String, // ✅ 상위에서 받은 날짜
 })
 
-const emit = defineEmits(['updateDate', 'selectPlan', 'update:selectedDate'])
+const emit = defineEmits(['updateDate', 'selectSchedule', 'update:selectedDate'])
 const currentPage = ref(0)
 const imageMap = ref({})
 
 const currentDate = computed(() => uniqueDates.value[currentPage.value])
-const paginatedPlans = computed(() => {
-  return props.plans.filter((p) => p.date === currentDate.value)
+const paginatedSchedules = computed(() => {
+  return props.schedules.filter((p) => p.date === currentDate.value)
 })
 const uniqueDates = computed(() => {
-  const dateSet = new Set(props.plans.map((p) => p.date))
+  const dateSet = new Set(props.schedules.map((p) => p.date))
   return [...dateSet].sort()
 })
 
@@ -90,20 +90,20 @@ watch(currentPage, (newPage) => {
   emit('update:selectedDate', newDate) // ✅ 변경
 })
 
-const loadImages = async (plans) => {
-  const idsToFetch = plans.filter((plan) => !imageMap.value[plan.id]).map((plan) => plan.id)
+const loadImages = async (schedules) => {
+  const idsToFetch = schedules.filter((schedule) => !imageMap.value[schedule.id]).map((schedule) => schedule.id)
 
   if (idsToFetch.length === 0) return
 
   try {
-    const response = await triendApi.get('/api/plans/images', {
-      params: { planIds: idsToFetch },
+    const response = await triendApi.get('/api/schedules/images', {
+      params: { scheduleIds: idsToFetch },
       paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' }),
     })
     const imageData = response.data // { 1: [...], 2: [...] }
     console.log('조회된 이미지 데이터: ', imageData)
-    for (const [planId, urls] of Object.entries(imageData)) {
-      imageMap.value[planId] = urls
+    for (const [scheduleId, urls] of Object.entries(imageData)) {
+      imageMap.value[scheduleId] = urls
     }
   } catch (e) {
     console.error('이미지 로딩 실패', e)
@@ -111,10 +111,10 @@ const loadImages = async (plans) => {
 }
 
 watch(
-  paginatedPlans,
-  (newPlans) => {
-    if (newPlans.length > 0) {
-      loadImages(newPlans)
+  paginatedSchedules,
+  (newSchedules) => {
+    if (newSchedules.length > 0) {
+      loadImages(newSchedules)
     }
   },
   { immediate: true },
@@ -122,14 +122,14 @@ watch(
 
 
 watch(
-  () => props.selectedPlan,
-  async (plan) => {
-    if (!plan) return
-    const index = uniqueDates.value.findIndex((d) => d === plan.date)
+  () => props.selectedSchedule,
+  async (schedule) => {
+    if (!schedule) return
+    const index = uniqueDates.value.findIndex((d) => d === schedule.date)
     if (index !== -1) {
       currentPage.value = index
       await nextTick()
-      const el = document.getElementById(`card-${plan.id}`)
+      const el = document.getElementById(`card-${schedule.id}`)
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   },
@@ -160,7 +160,7 @@ const formatTime = (isoString) => {
   align-items: center;
 }
 
-.plan-card {
+.schedule-card {
   border: 2px solid #81d4fa;
   border-radius: 10px;
   background-color: #e0f7fa;
@@ -171,11 +171,11 @@ const formatTime = (isoString) => {
   width: 80%;
 }
 
-.plan-card:hover {
+.schedule-card:hover {
   transform: translateY(-3px);
 }
 
-.plan-title {
+.schedule-title {
   margin-bottom: 12px;
   color: #000000;
   border-bottom: 1px dashed #4fc3f7;
@@ -186,14 +186,14 @@ const formatTime = (isoString) => {
   font-size: 18px;
   font-weight: bold;
 }
-.plan-item p {
+.schedule-item p {
   margin: 6px 0;
   font-size: 16px;
   color: #333;
   line-height: 1.4;
 }
 
-.plan-item strong {
+.schedule-item strong {
   color: #0277bd;
 }
 
@@ -222,20 +222,20 @@ const formatTime = (isoString) => {
   color: #000000;
 }
 
-.plan-item {
+.schedule-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 15px;
 }
 
-.plan-info {
+.schedule-info {
   flex-shrink: 0; /* ✅ 줄바꿈 안되고 넉넉한 너비 확보 */
   white-space: nowrap;
   overflow-x: auto;
 }
 
-.plan-image img {
+.schedule-image img {
   width: 120px;
   height: 90px;
   object-fit: cover;
