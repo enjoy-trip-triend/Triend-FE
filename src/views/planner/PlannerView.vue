@@ -49,33 +49,52 @@
         />
         <!-- 메인 컨텐츠 분할 (6:4 비율) -->
         <div class="planner-sections">
-          <div class="left-section">
+          <div
+            class="left-section"
+            :style="{
+              flex: currentView === 'table' ? 7 : 6,
+            }"
+          >
             <ScheduleTableSection
               v-if="currentView === 'table'"
               @openUpdateSchedulesModal="showScheduleUpdateModal"
               :schedules="schedules"
-              :selectedSchedule="selectedSchedule"
-              @selectSchedule="selectedSchedule = $event"
+              v-model:selectedSchedule="selectedSchedule"
               :isEditable="true"
             />
             <ScheduleMapSection
               v-if="currentView === 'map' && schedules && schedules.length > 0"
               :schedules="schedules"
-              :selectedSchedule="selectedSchedule"
-              @selectSchedule="selectedSchedule = $event"
+              v-model:selectedSchedule="selectedSchedule"
               v-model:selectedDate="selectedDate"
+              v-model:recommendedRoute="recommendedRoute"
+              @clearRecommendedRoute="recommendedRoute = []"
             />
             <button class="circle-toggle-btn" @click="toggleView">
               <span v-if="currentView === 'table'">🗺</span>
               <span v-else>📋</span>
             </button>
           </div>
-          <div class="right-section">
+          <div
+            class="right-section"
+            :style="{
+              flex: currentView === 'table' ? 3 : 4,
+            }"
+          >
             <ScheduleCardSection
+              v-if="currentView === 'table'"
               :schedules="schedules"
-              :selectedSchedule="selectedSchedule"
-              @selectSchedule="selectedSchedule = $event"
+              v-model:selectedSchedule="selectedSchedule"
               v-model:selectedDate="selectedDate"
+            />
+
+            <RouteRecommendSection
+              v-if="currentView === 'map' && schedules && schedules.length > 0"
+              :schedules="schedules"
+              v-model:selectedSchedule="selectedSchedule"
+              v-model:selectedDate="selectedDate"
+              v-model:recommendedRoute="recommendedRoute"
+              @routeApplied="fetchSchedules"
             />
           </div>
         </div>
@@ -95,6 +114,8 @@ import { useMemberStore } from '@/stores/member.js'
 import { useRouter } from 'vue-router'
 import UpdateScheduleModal from '@/components/planner/schedule/UpdateScheduleModal.vue'
 import ScheduleMapSection from '@/components/planner/schedule/ScheduleMapSection.vue'
+import RouteRecommendSection from '@/components/planner/schedule/RouteRecommenSection.vue'
+
 const router = useRouter()
 const planners = ref([])
 const schedules = ref([])
@@ -105,6 +126,7 @@ const updatePlannerVisible = ref(false)
 const updateSchedulesVisible = ref(false)
 const selectedSchedule = ref(null)
 const selectedDate = ref('')
+const recommendedRoute = ref([])
 
 const toggleView = () => {
   if (currentView.value === 'table' && (!schedules.value || schedules.value.length === 0)) {
@@ -655,11 +677,11 @@ textarea {
 }
 
 .planner-sections > *:first-child {
-  flex: 7;
+  flex: 6.5;
 }
 
 .planner-sections > *:last-child {
-  flex: 3;
+  flex: 3.5;
 }
 
 .empty-state {
