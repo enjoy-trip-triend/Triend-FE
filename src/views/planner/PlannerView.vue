@@ -95,7 +95,7 @@
               v-model:selectedSchedule="selectedSchedule"
               v-model:selectedDate="selectedDate"
               v-model:recommendedRoute="recommendedRoute"
-              @routeApplied="fetchSchedules"
+              @routeApplied="fetchRecommendSchedules"
             />
           </div>
         </div>
@@ -174,6 +174,20 @@ const fetchSchedules = async (planner) => {
     console.error('플랜 불러오기 실패:', err)
   }
 }
+
+const fetchRecommendSchedules = async (plannerId) => {
+  if (!currentPlanner.value || !currentPlanner.value.id) return
+  try {
+    const response = await triendApi({
+      url: `/api/planners/${plannerId}/schedules`,
+      method: 'get',
+    })
+    schedules.value = response.data
+  } catch (err) {
+    console.error('추천 일정 불러오기 실패:', err)
+  }
+}
+
 
 const showPlannerEditModal = (planner) => {
   currentPlanner.value = planner
