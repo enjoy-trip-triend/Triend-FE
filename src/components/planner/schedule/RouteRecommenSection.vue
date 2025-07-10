@@ -240,19 +240,25 @@ const applyRecommendedRoute = async () => {
       idx: index + 1
     }))
 
+    const recommendRequest = {
+      plannerId: props.plannerId,
+      date: props.selectedDate,
+      recommendSchedules: orderData,  
+    }
+    console.log('props.plannerId:', props.plannerId)
     console.log('경로 적용 데이터:', orderData)
     
     await triendApi({
       url: `/api/planners/${props.plannerId}/schedules/order`,
       method: 'put',
-      data: orderData,
+      data: recommendRequest,
     })
 
     // 성공 시 draggableSchedules도 업데이트
     draggableSchedules.value = [...recommendedRoute.value]
     
     // 부모 컴포넌트에 알림
-    emit('routeApplied', recommendedRoute.value)
+    emit('routeApplied', props.plannerId)
     
     // 추천 경로 초기화 (적용 완료 후)
     recommendedRoute.value = []
