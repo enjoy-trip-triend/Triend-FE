@@ -91,6 +91,7 @@
             <RouteRecommendSection
               v-if="currentView === 'map' && schedules && schedules.length > 0"
               :schedules="schedules"
+              :plannerId="currentPlanner.id"
               v-model:selectedSchedule="selectedSchedule"
               v-model:selectedDate="selectedDate"
               v-model:recommendedRoute="recommendedRoute"
