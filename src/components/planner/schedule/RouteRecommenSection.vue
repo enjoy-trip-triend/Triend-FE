@@ -2,8 +2,8 @@
   <div class="route-recommend-section">
     <div class="header-section">
       <h2>🗺️ 경로 최적화</h2>
-      <button 
-        class="recommend-btn-compact" 
+      <button
+        class="recommend-btn-compact"
         @click="requestRouteRecommend"
         :disabled="isLoading || filteredSchedules.length === 0"
         :title="filteredSchedules.length === 0 ? '일정을 추가해주세요' : 'AI로 경로 최적화'"
@@ -35,7 +35,7 @@
             </div>
           </div>
           <span class="drag-hint">🔄 드래그로 순서 변경</span>
-          
+
           <draggable
             v-model="draggableSchedules"
             tag="ul"
@@ -51,7 +51,7 @@
           >
             <template #item="{ element: schedule, index }">
               <li
-                :class="{ 
+                :class="{
                   selected: schedule === selectedSchedule,
                   'start-point': index === 0,
                   'end-point': index === draggableSchedules.length - 1
@@ -96,7 +96,7 @@
               <li
                 v-for="(schedule, index) in recommendedRoute"
                 :key="`recommended-${schedule.id}`"
-                :class="{ 
+                :class="{
                   selected: schedule === selectedSchedule,
                   'start-point': index === 0,
                   'end-point': index === recommendedRoute.length - 1
@@ -124,7 +124,7 @@
 
       <!-- 적용하기 버튼 섹션 -->
       <div v-if="recommendedRoute.length > 0" class="apply-button-section">
-        <button 
+        <button
           class="apply-btn-full"
           @click="applyRecommendedRoute"
           :disabled="isApplying"
@@ -194,9 +194,9 @@ const requestRouteRecommend = async () => {
   }
 
   if (isLoading.value) return
-  
+
   isLoading.value = true
-  
+
   // 현재 드래그된 순서대로 API 요청
   const payload = draggableSchedules.value.map((s) => ({
     name: s.place?.placeName ?? '',
@@ -230,9 +230,9 @@ const requestRouteRecommend = async () => {
 
 const applyRecommendedRoute = async () => {
   if (isApplying.value || recommendedRoute.value.length === 0) return
-  
+
   isApplying.value = true
-  
+
   try {
     // 추천 경로 순서대로 idx를 1부터 할당
     const orderData = recommendedRoute.value.map((schedule, index) => ({
@@ -240,31 +240,26 @@ const applyRecommendedRoute = async () => {
       idx: index + 1
     }))
 
-    const recommendRequest = {
-      plannerId: props.plannerId,
-      date: props.selectedDate,
-      recommendSchedules: orderData,  
-    }
     console.log('props.plannerId:', props.plannerId)
     console.log('경로 적용 데이터:', orderData)
-    
+
     await triendApi({
       url: `/api/planners/${props.plannerId}/schedules/order`,
       method: 'put',
-      data: recommendRequest,
+      data: orderData
     })
 
     // 성공 시 draggableSchedules도 업데이트
     draggableSchedules.value = [...recommendedRoute.value]
-    
+
     // 부모 컴포넌트에 알림
     emit('routeApplied', props.plannerId)
-    
+
     // 추천 경로 초기화 (적용 완료 후)
     recommendedRoute.value = []
-    
+
     alert('추천 경로가 성공적으로 적용되었습니다!')
-    
+
   } catch (err) {
     console.error('경로 적용 실패:', err)
     alert('경로 적용 중 오류가 발생했습니다.')
@@ -912,40 +907,40 @@ const applyRecommendedRoute = async () => {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .route-recommend-section {
     padding: 16px;
   }
-  
+
   .header-section {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
     text-align: center;
   }
-  
+
   .route-recommend-section h2 {
     font-size: 20px;
   }
-  
+
   .recommend-btn-compact {
     align-self: center;
     min-width: 120px;
   }
-  
+
   .route-card {
     max-height: 400px;
   }
-  
+
   .route-list {
     max-height: 250px;
   }
-  
+
   .apply-btn-full {
     padding: 14px 20px;
     font-size: 14px;
   }
-  
+
   .apply-btn-full .apply-icon,
   .apply-btn-full .apply-text {
     font-size: 14px;
