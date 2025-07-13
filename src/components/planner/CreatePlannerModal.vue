@@ -13,10 +13,10 @@
           </div>
         </div>
 
-        <!-- 이름 -->
+        <!-- 플래너 이름 -->
         <div class="form-group">
           <label>플래너 이름</label>
-          <input type="text" v-model="form.name" placeholder="여행 계획의 이름을 알려주세요." />
+          <input type="text" v-model="form.name" required placeholder="여행 계획의 이름을 알려주세요." />
         </div>
 
         <!-- 설명 -->
@@ -28,7 +28,7 @@
         <!-- 공개 범위 -->
         <div class="form-group">
           <label>공개 범위</label>
-          <div class="radio-group center">
+          <div class="radio-group">
             <label class="radio-item">
               <input type="radio" v-model="form.exposure" value="PUBLIC" /> 전체공개
             </label>
@@ -44,13 +44,13 @@
           <ul class="locations-list">
             <li v-for="(loc, idx) in form.locations" :key="idx" class="location-item">
               <input type="text" :value="loc.name" readonly />
-              <button type="button" class="remove-btn" @click="removeLocation(idx)">×</button>
+              <button type="button" class="cancel-btn" @click="removeLocation(idx)">×</button>
             </li>
           </ul>
-          <button type="button" class="add-location-btn" @click="openLocationModal">장소 추가</button>
+          <button type="button" class="submit-btn" @click="openLocationModal">장소 추가</button>
         </div>
 
-        <!-- 버튼 -->
+        <!-- 액션 버튼 -->
         <div class="button-group">
           <button type="submit" class="submit-btn">생성하기</button>
           <button type="button" class="cancel-btn" @click="$emit('close')">닫기</button>
@@ -58,7 +58,11 @@
       </form>
 
       <!-- LocationSelectModal -->
-      <LocationSelectModal v-if="showLocationModal" @select="onRegionSelect" @close="showLocationModal = false" />
+      <LocationSelectModal
+        v-if="showLocationModal"
+        @select="onRegionSelect"
+        @close="showLocationModal = false"
+      />
     </div>
   </div>
 </template>
@@ -69,48 +73,40 @@ import LocationSelectModal from '@/components/location/LocationSelectModal.vue'
 
 const emit = defineEmits(['submit', 'close'])
 
-// 폼 데이터
 const form = ref({
   startDay: '',
   endDay: '',
   name: '',
   comment: '',
   exposure: 'PUBLIC',
-  locations: [] // {sidoCode, gugunCode, name}
+  locations: []
 })
 
-// 모달 상태
 const showLocationModal = ref(false)
 
-// 날짜 유효성
 function setEndMin() {
   if (form.value.endDay && form.value.endDay < form.value.startDay) {
     form.value.endDay = form.value.startDay
   }
 }
 
-// Location modal 열기
 function openLocationModal() {
   showLocationModal.value = true
 }
 
-// LocationSelectModal 에서 선택 완료 시 호출
 function onRegionSelect(region) {
-  console.log('선택된 region:', region)
   form.value.locations.push({
     sidoCode: region.sidoCode,
     gugunCode: region.gugunCode,
-    name: region.label // RegionSelectModal emits {label, ...}
+    name: region.label
   })
   showLocationModal.value = false
 }
 
-// 선택된 장소 제거
 function removeLocation(idx) {
   form.value.locations.splice(idx, 1)
 }
 
-// 플래너 생성
 function createPlanner() {
   const requestData = {
     startDay: form.value.startDay,
@@ -131,36 +127,41 @@ function createPlanner() {
 <style scoped>
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 2000;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
 }
 
 .modal {
+  position: absolute;
+  width: 400px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   background: #fff;
   padding: 30px;
   border-radius: 10px;
-  width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   text-align: center;
+  z-index: 210;
 }
 
-.planner-form .form-group {
+.modal h2 {
+  margin-bottom: 15px;
+  color: #0288d1;
+}
+
+.form-group {
   margin-bottom: 16px;
-  text-align: left;
 }
 
 .planner-form label {
   display: block;
+  font-size: 14px;
   font-weight: 500;
-  margin-bottom: 6px;
-  color: #333;
+  margin-bottom: 5px;
 }
 
 .planner-form input,
@@ -179,6 +180,10 @@ function createPlanner() {
   gap: 10px;
 }
 
+.date-inline input[type='date'] {
+  flex: 1;
+}
+
 .date-inline .arrow {
   font-size: 18px;
   color: #555;
@@ -186,16 +191,12 @@ function createPlanner() {
 
 .radio-group {
   display: flex;
+  justify-content: center;
   gap: 20px;
 }
 
-.radio-group.center {
-  justify-content: center;
-  align-items: center;
-}
-
 .radio-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
 }
@@ -203,7 +204,7 @@ function createPlanner() {
 .locations-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 8px;
+  margin: 0;
 }
 
 .location-item {
@@ -213,35 +214,7 @@ function createPlanner() {
   margin-bottom: 8px;
 }
 
-.remove-btn {
-  background: transparent;
-  border: none;
-  color: #f44336;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-.add-location-btn {
-  background: #4fc3f7;
-  border: none;
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.add-location-btn:hover {
-  background: #039be5;
-}
-
-.locations-select {
-  width: 100%;
-  height: auto;
-  margin-top: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 8px;
-  box-sizing: border-box;
+.location-item input[readonly] {
   background: #f9f9f9;
 }
 
@@ -253,28 +226,28 @@ function createPlanner() {
 }
 
 .submit-btn {
-  background: #0288d1;
-  border: none;
+  background-color: #4fc3f7;
   color: #fff;
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.cancel-btn {
-  background: transparent;
-  border: 1px solid #888;
-  color: #555;
+  border: none;
   padding: 8px 16px;
   border-radius: 5px;
   cursor: pointer;
 }
 
 .submit-btn:hover {
-  background: #0277bd;
+  background-color: #015f9b;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: 1px solid #4fc3f7;
+  color: #4fc3f7;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 .cancel-btn:hover {
-  background: #f0f0f0;
+  background: #f0f6fa;
 }
 </style>
