@@ -153,9 +153,26 @@ async function handleCreatePlanner(newPlanner) {
   }
 }
 
-const showPlannerEditModal = (planner) => {
-  currentPlanner.value = planner
-  updatePlannerVisible.value = true
+const showPlannerEditModal = async (planner) => {
+  try {
+    // 1) 저장된 장소 목록 조회
+    const res = await triendApi({
+      url: `/api/planners/${planner.id}/locations`,
+      method: 'get'
+    })
+
+    // 2) 원래 planner 정보에 locations 필드 추가
+    currentPlanner.value = {
+      ...planner,
+      locations: res.data
+    }
+
+    // 3) 수정 모달 표시
+    updatePlannerVisible.value = true
+  } catch (err) {
+    console.error('플래너 장소 불러오기 실패:', err)
+    alert('플래너의 저장된 장소를 가져오는 데 실패했습니다.')
+  }
 }
 
 const handlePlannerUpdate = async (formData) => {
