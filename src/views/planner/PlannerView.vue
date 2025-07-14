@@ -56,6 +56,7 @@
               :schedules="schedules"
               :selectedSchedule="selectedSchedule"
               @selectSchedule="selectedSchedule = $event"
+              :isEditable="true"
             />
             <ScheduleMapSection
               v-if="currentView === 'map' && schedules && schedules.length > 0"

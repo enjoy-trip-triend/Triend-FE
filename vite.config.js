@@ -15,6 +15,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  define: {
+    global: {},
+  },
   server: {
     proxy: {
       '/api': {
@@ -27,7 +30,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: path => path.replace(/^\/vworld/, '')
-      }
+      },
+      '/triend-websocket': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })
