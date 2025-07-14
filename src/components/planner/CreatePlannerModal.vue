@@ -58,11 +58,7 @@
       </form>
 
       <!-- LocationSelectModal -->
-      <LocationSelectModal
-        v-if="showLocationModal"
-        @select="onRegionSelect"
-        @close="showLocationModal = false"
-      />
+      <LocationSelectModal v-if="showLocationModal" @select="onRegionSelect" @close="showLocationModal = false" />
     </div>
   </div>
 </template>
@@ -95,6 +91,15 @@ function openLocationModal() {
 }
 
 function onRegionSelect(region) {
+  // 장소 중복 삽입 막기
+  const exists = form.value.locations.some(l =>
+    l.sidoCode === region.sidoCode &&
+    l.gugunCode === region.gugunCode
+  )
+  if (exists) {
+    return alert('이미 등록된 장소입니다.')
+  }
+
   form.value.locations.push({
     sidoCode: region.sidoCode,
     gugunCode: region.gugunCode,
@@ -127,8 +132,11 @@ function createPlanner() {
 <style scoped>
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
   z-index: 2000;
   display: flex;
   justify-content: center;
@@ -138,12 +146,13 @@ function createPlanner() {
 .modal {
   position: absolute;
   width: 400px;
-  top: 50%; left: 50%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   background: #fff;
   padding: 30px;
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
   z-index: 210;
 }

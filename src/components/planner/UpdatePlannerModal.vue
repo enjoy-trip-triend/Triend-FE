@@ -124,6 +124,15 @@ function openLocationModal() {
 }
 
 function onRegionSelect(region) {
+  // 장소 중복 삽입 막기
+  const exists = form.locations.some(l =>
+    l.sidoCode === region.sidoCode &&
+    l.gugunCode === region.gugunCode
+  )
+  if (exists) {
+    return alert('이미 등록된 장소입니다.')
+  }
+
   form.locations.push({
     sidoCode: region.sidoCode,
     gugunCode: region.gugunCode,
