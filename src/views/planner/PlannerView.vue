@@ -179,7 +179,7 @@ const handlePlannerUpdate = async (formData) => {
   try {
     await triendApi({ url: `/api/planners/${formData.id}`, method: 'put', data: formData })
     updatePlannerVisible.value = false
-    Object.assign(currentPlanner.value, formData)
+    await fetchPlanners()
   } catch (err) {
     console.error('플래너 수정하기 실패:', err)
   }
