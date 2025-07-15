@@ -51,7 +51,7 @@ async function loadDistricts() {
 
   try {
     const res = await triendApi({
-      url: `/api/locations/guguns/${selectedProvince.value}`,
+      url: `/api/locations/sidos/${selectedProvince.value}/guguns`,
       method: 'get'
     })
     // 역시 [{id, code, name}, ...]
