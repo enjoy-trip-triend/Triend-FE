@@ -40,20 +40,54 @@
           @close="updateSchedulesVisible = false" @updateSchedules="handleSchedulesUpdate" />
         <!-- 메인 컨텐츠 분할 (6:4 비율) -->
         <div class="planner-sections">
-          <div class="left-section">
-            <ScheduleTableSection v-if="currentView === 'table'" @openUpdateSchedulesModal="showScheduleUpdateModal"
-              :schedules="schedules" :selectedSchedule="selectedSchedule" @selectSchedule="selectedSchedule = $event" />
-            <ScheduleMapSection v-if="currentView === 'map' && schedules && schedules.length > 0" :schedules="schedules"
-              :selectedSchedule="selectedSchedule" @selectSchedule="selectedSchedule = $event"
-              v-model:selectedDate="selectedDate" />
+          <div
+            class="left-section"
+            :style="{
+              flex: currentView === 'table' ? 7 : 6,
+            }"
+          >
+            <ScheduleTableSection
+              v-if="currentView === 'table'"
+              @openUpdateSchedulesModal="showScheduleUpdateModal"
+              :schedules="schedules"
+              v-model:selectedSchedule="selectedSchedule"
+              :isEditable="true"
+            />
+            <ScheduleMapSection
+              v-if="currentView === 'map' && schedules && schedules.length > 0"
+              :schedules="schedules"
+              v-model:selectedSchedule="selectedSchedule"
+              v-model:selectedDate="selectedDate"
+              v-model:recommendedRoute="recommendedRoute"
+              @clearRecommendedRoute="recommendedRoute = []"
+            />
             <button class="circle-toggle-btn" @click="toggleView">
               <span v-if="currentView === 'table'">🗺</span>
               <span v-else>📋</span>
             </button>
           </div>
-          <div class="right-section">
-            <ScheduleCardSection :schedules="schedules" :selectedSchedule="selectedSchedule"
-              @selectSchedule="selectedSchedule = $event" v-model:selectedDate="selectedDate" />
+          <div
+            class="right-section"
+            :style="{
+              flex: currentView === 'table' ? 3 : 4,
+            }"
+          >
+            <ScheduleCardSection
+              v-if="currentView === 'table'"
+              :schedules="schedules"
+              v-model:selectedSchedule="selectedSchedule"
+              v-model:selectedDate="selectedDate"
+            />
+
+            <RouteRecommendSection
+              v-if="currentView === 'map' && schedules && schedules.length > 0"
+              :schedules="schedules"
+              :plannerId="currentPlanner.id"
+              v-model:selectedSchedule="selectedSchedule"
+              v-model:selectedDate="selectedDate"
+              v-model:recommendedRoute="recommendedRoute"
+              @routeApplied="fetchRecommendSchedules"
+            />
           </div>
         </div>
       </template>
@@ -77,6 +111,8 @@ import { useRouter } from 'vue-router'
 import UpdateScheduleModal from '@/components/planner/schedule/UpdateScheduleModal.vue'
 import ScheduleMapSection from '@/components/planner/schedule/ScheduleMapSection.vue'
 import CreatePlannerModal from '@/components/planner/CreatePlannerModal.vue'
+import RouteRecommendSection from '@/components/planner/schedule/RouteRecommenSection.vue'
+
 const router = useRouter()
 const planners = ref([])
 const schedules = ref([])
@@ -88,6 +124,7 @@ const updateSchedulesVisible = ref(false)
 const selectedSchedule = ref(null)
 const selectedDate = ref('')
 const isCreateModalOpen = ref(false)
+const recommendedRoute = ref([])
 
 const toggleView = () => {
   if (currentView.value === 'table' && (!schedules.value || schedules.value.length === 0)) {
@@ -172,6 +209,19 @@ const showPlannerEditModal = async (planner) => {
   } catch (err) {
     console.error('플래너 장소 불러오기 실패:', err)
     alert('플래너의 저장된 장소를 가져오는 데 실패했습니다.')
+  }
+}
+
+const fetchRecommendSchedules = async (plannerId) => {
+  if (!currentPlanner.value || !currentPlanner.value.id) return
+  try {
+    const response = await triendApi({
+      url: `/api/planners/${plannerId}/schedules`,
+      method: 'get',
+    })
+    schedules.value = response.data
+  } catch (err) {
+    console.error('추천 일정 불러오기 실패:', err)
   }
 }
 
@@ -427,17 +477,6 @@ const sharePlanner = async (planner) => {
   box-sizing: border-box;
 }
 
-.create-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #4fc3f7;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
 /* 표 형식 플랜 영역 */
 .plan-table {
   flex: 1;
@@ -690,12 +729,12 @@ textarea {
   gap: 20px;
 }
 
-.planner-sections>*:first-child {
-  flex: 7;
+.planner-sections > *:first-child {
+  flex: 6.5;
 }
 
-.planner-sections>*:last-child {
-  flex: 3;
+.planner-sections > *:last-child {
+  flex: 3.5;
 }
 
 .empty-state {

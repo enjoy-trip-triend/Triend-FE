@@ -59,13 +59,14 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { triendApi } from '@/axios/index.js'
+import { sendScheduleUpdate, sendScheduleDelete } from '@/utils/websocket'
 
 const props = defineProps({
   schedules: Array,
   planner: Object,
 })
 
-const emit = defineEmits(['close', 'updateSchedules', 'deleteSchedules']) // 🧩 updateSchedules: 최종 갱신 반영용
+const emit = defineEmits(['close', 'updateSchedules', 'deleteSchedules'])
 
 const editableSchedules = ref(props.schedules.map((p) => ({ ...p })))
 const selectedScheduleIds = ref([])
@@ -82,6 +83,9 @@ const modifySchedules = async () => {
       method: 'put',
       data: editableSchedules.value,
     })
+
+    // 웹소켓 브로드캐스트
+    editableSchedules.value.forEach(schedule => sendScheduleUpdate(schedule))
 
     emit('updateSchedules', editableSchedules.value)
     alert('수정이 완료되었습니다.')
@@ -114,6 +118,11 @@ const deleteSchedules = async () => {
     selectAll.value = false
 
     alert('삭제가 완료되었습니다.')
+
+    // 웹소켓 브로드캐스트
+    schedulesToDelete.forEach(id => {
+      sendScheduleDelete(id, props.planner.id)
+    })
 
     // 🧩 부모 컴포넌트도 갱신
     emit('updateSchedules', editableSchedules.value)

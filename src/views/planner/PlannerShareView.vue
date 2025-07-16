@@ -28,6 +28,21 @@
         </template>
       </div>
 
+      <!-- 편집자 목록 출력 -->
+      <div class="editor-info" v-if="editors.length > 0">
+        <h4>✍️ 현재 편집 중인 사용자</h4>
+        <ul>
+          <li
+            v-for="editor in editors"
+            :key="editor.sessionId"
+            :class="{ me: isMe(editor.sessionId) }"
+          >
+            {{ editor.name }}
+            <span v-if="isMe(editor.sessionId)"> (me)</span>
+          </li>
+        </ul>
+      </div>
+
       <h3>{{ planner.name }}</h3>
       <div class="planner-meta">
         <div class="meta-item">
@@ -87,10 +102,12 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { triendApi } from '@/axios'
+
+import { sendScheduleUpdate, connectWebSocket, disconnectWebSocket } from '@/utils/websocket'
 import ScheduleTableSection from '@/components/planner/schedule/ScheduleTableSection.vue'
 import ScheduleMapSection from '@/components/planner/schedule/ScheduleMapSection.vue'
 import ScheduleCardSection from '@/components/planner/schedule/ScheduleCardSection.vue'
@@ -108,12 +125,28 @@ const schedules = ref([])
 const joined = ref(false)
 const errorMsg = ref('')
 const updateSchedulesVisible = ref(false)
-const isLoggedIn = computed(() => !!localStorage.getItem('accessToken'))
+const isLoggedIn = computed(() => {
+  const memberStr = localStorage.getItem('member')
+  if (!memberStr) return false
+  try {
+    const member = JSON.parse(memberStr)
+    return member.isLoggedIn === true
+  } catch (e) {
+    return false
+  }
+})
+const mySessionId = ref('');
+
+const isMe = (sessionId: string) => {
+  if (!sessionId || !mySessionId.value) return false;
+  return sessionId.trim() === mySessionId.value.trim();
+};
 
 // 추가된 상태
 const selectedSchedule = ref(null)
 const selectedDate = ref('')
 const currentView = ref('table')
+const editors = ref([])
 
 const toggleView = () => {
   if (currentView.value === 'table' && (!schedules.value || schedules.value.length === 0)) {
@@ -121,6 +154,24 @@ const toggleView = () => {
     return
   }
   currentView.value = currentView.value === 'table' ? 'map' : 'table'
+}
+
+const handleScheduleUpdate = (schedule) => {
+  if (schedule.action === 'UPDATE') {
+    const idx = schedules.value.findIndex(p => p.id === schedule.id)
+    if (idx !== -1) {
+      schedules.value[idx] = { ...schedules.value[idx], ...schedule }
+    } else {
+      schedules.value.push(schedule)
+    }
+  } else if (schedule.action === 'DELETE') {
+    schedules.value = schedules.value.filter(p => p.id !== schedule.scheduleId)
+  }
+}
+
+const handleEditorUpdate = (editorList) => {
+  console.log('[📥 편집자 목록 수신]', editorList)
+  editors.value = editorList
 }
 
 const verifyAndFetchPlanner = async () => {
@@ -140,6 +191,11 @@ const verifyAndFetchPlanner = async () => {
     schedules.value = response.data.schedules
     isEditable.value = response.data.isEditable
     joined.value = true
+
+    sessionStorage.setItem('plannerId', plannerId)
+    connectWebSocket(handleScheduleUpdate, handleEditorUpdate, (sessionId) => {
+      mySessionId.value = sessionId
+    })
   } catch (err) {
     console.error('비밀번호 검증 실패', err)
     alert('비밀번호가 틀렸거나 잘못된 링크입니다.')
@@ -170,7 +226,15 @@ const handleOpenUpdateSchedulesModal = () => {
 
 const handleSchedulesUpdate = (updatedSchedules) => {
   schedules.value = updatedSchedules
+  updatedSchedules.forEach(schedule => {
+    sendScheduleUpdate(schedule)
+  })
 }
+
+onUnmounted(() => {
+  disconnectWebSocket()
+})
+
 </script>
 
 <style scoped>
@@ -344,4 +408,34 @@ const handleSchedulesUpdate = (updatedSchedules) => {
   background-color: #015f9b;
   transform: scale(1.1);
 }
+
+.editor-info {
+  background-color: #fffbe6;
+  border: 1px solid #ffe082;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.editor-info h4 {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.editor-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.editor-info li {
+  font-size: 14px;
+  color: #333;
+}
+
+.me {
+  font-weight: bold;
+  color: #1976d2;
+}
+
 </style>
