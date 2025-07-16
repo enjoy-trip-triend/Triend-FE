@@ -21,7 +21,7 @@
             :key="schedule.id"
             :id="`row-${schedule.id}`"
             :class="{ selected: schedule.id === selectedSchedule?.id }"
-            @click="$emit('selectSchedule', schedule)"
+            @click="$emit('update:selectedSchedule', schedule)"
           >
             <td
               v-if="idx === 0"
@@ -56,7 +56,7 @@ const props = defineProps({
   isEditable: Boolean,
 })
 
-const emit = defineEmits(['openUpdateSchedulesModal', 'selectSchedule'])
+const emit = defineEmits(['openUpdateSchedulesModal', 'update:selectedSchedule'])
 
 watch(
   () => props.selectedSchedule,

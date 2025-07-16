@@ -15,14 +15,14 @@
         :key="schedule.id"
         :id="`card-${schedule.id}`"
         class="schedule-card"
-        @click="$emit('selectSchedule', schedule)"
+        @click="$emit('update:selectedSchedule', schedule)"
         :class="{ selected: schedule.id === selectedSchedule?.id }"
       >
         <div class="schedule-title">
-          <a v-if="schedule.placeUrl" class="place-url" :href="schedule.placeUrl" target="_blank">
-            <span class="card-title">{{ schedule.placeName }}</span>
+          <a v-if="schedule.placeUrl" class="place-url" :href="`http://place.map.kakao.com/` + schedule.place?.kakaoId" target="_blank">
+            <span class="card-title">{{ schedule.place?.placeName }}</span>
           </a>
-          <span v-else class="card-title">{{ schedule.placeName }}</span>
+          <span v-else class="card-title">{{ schedule.place?.placeName }}</span>
 
           <span class="card-time">
             🕒 {{ formatTime(schedule.startTime) }}
@@ -60,7 +60,7 @@ const props = defineProps({
   selectedDate: String, // ✅ 상위에서 받은 날짜
 })
 
-const emit = defineEmits(['updateDate', 'selectSchedule', 'update:selectedDate'])
+const emit = defineEmits(['updateDate', 'update:selectedSchedule', 'update:selectedDate'])
 const currentPage = ref(0)
 const imageMap = ref({})
 
