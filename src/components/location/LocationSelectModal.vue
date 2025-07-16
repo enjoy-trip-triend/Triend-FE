@@ -4,7 +4,7 @@
       <div class="modal">
         <h2>장소 선택</h2>
         <!-- RegionSelector를 사용해 시도/구군 선택 -->
-        <RegionSelector @searchRegion="onSelect" />
+        <RegionSelector @search-region="onSelect" />
        <div class="button-group">
           <button type="button" class="submit-btn" @click="confirmSelection">선택</button>
           <button type="button" class="cancel-btn" @click="$emit('close')">취소</button>

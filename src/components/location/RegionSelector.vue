@@ -22,7 +22,7 @@
 import { ref, onMounted } from 'vue'
 import { triendApi } from '@/axios/index.js'
 
-const emit = defineEmits(['searchRegion'])
+const emit = defineEmits(['search-region'])
 
 const provinces = ref([])
 const districts = ref([])
@@ -70,10 +70,11 @@ function emitRegion() {
   const dist = districts.value.find(d => d.gugunCode === selectedDistrict.value)?.gugunName || ''
   const label = dist ? `${prov} ${dist}` : prov
   const regionCode = selectedDistrict.value || selectedProvince.value
-  emit('searchRegion', {
+  emit('search-region', {
     label,
     sidoCode: selectedProvince.value,
-    gugunCode: selectedDistrict.value || null
+    gugunCode: selectedDistrict.value || null,
+    regionCode
   })
 }
 </script>

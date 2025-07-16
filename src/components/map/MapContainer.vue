@@ -23,15 +23,18 @@ const memberStore = useMemberStore()
 
 const props = defineProps({
   searchQuery: String,
-  adminCode: String,
+  regionCode: String,
 })
 
 let boundaryPolygons = []
 watch(
-  () => props.adminCode,
+  () => props.regionCode,
   async (newCode) => {
-    console.log('⚙️ adminCode changed → drawBoundary:', newCode)
+    console.log('⚙️ regionCode changed → drawBoundary:', newCode)
     if (newCode) {
+      // 기존에 그려진 경계 제거
+      boundaryPolygons.forEach(poly => poly.setMap(null))
+      boundaryPolygons = []
       await drawBoundary(newCode)
     }
   },
@@ -173,10 +176,12 @@ const loadKakaoMap = (container) => {
 watch(
   () => props.searchQuery,
   (newQuery) => {
-    if (newQuery && searchPlaces) {
+    console.log('🔍 searchQuery changed → searchPlaces:', newQuery)
+    if (newQuery && props.regionCode && typeof searchPlaces === 'function') {
+      _clearMarkers()
       searchPlaces(newQuery)
     }
-  },
+  }
 )
 </script>
 
