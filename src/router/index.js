@@ -7,6 +7,7 @@ import LandingView from '@/views/LandingView.vue'
 import MyPageView from '@/views/member/MyPageView.vue'
 import PlannerView from '@/views/planner/PlannerView.vue'
 import PlannerShareView from '@/views/planner/PlannerShareView.vue'
+import ScheduleEditView from '@/views/planner/schedule/ScheduleEditView.vue'
 
 import { useMemberStore } from '@/stores/member'
 import { triendApi } from '@/axios'
@@ -45,6 +46,11 @@ const router = createRouter({
       path: '/planners',
       name: 'PlannerView',
       component: PlannerView,
+    },
+    {
+      path: '/planners/:plannerId/schedules/edit',
+      name: 'ScheduleEditView',
+      component: ScheduleEditView,
     },
     {
       path: '/member/login-form',
