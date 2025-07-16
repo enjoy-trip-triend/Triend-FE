@@ -1,6 +1,7 @@
 <template>
   <div class="home-container">
     <SideBar>
+      <h2>검색</h2>
       <SearchBar placeholder="여행지를 입력하세요" searchType="trip" @search="handleSearch" />
 
       <!-- 추천 리스트 영역 -->
@@ -245,6 +246,12 @@ body {
   margin-top: 60px;
   overflow: hidden;
   height: calc(100vh - 60px); /* 예: 헤더 높이 감안 */
+}
+
+h2 {
+  margin-bottom: 20px;
+  font-size: 18px;
+  color: #0277bd;
 }
 
 .home-container > *:first-child {

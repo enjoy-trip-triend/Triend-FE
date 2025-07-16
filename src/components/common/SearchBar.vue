@@ -1,13 +1,6 @@
 <template>
   <div class="search-bar">
-    <h2>검색</h2>
-    <input
-      class="search-input"
-      type="text"
-      v-model="query"
-      :placeholder="placeholder"
-      @keyup.enter="onSearch"
-    />
+    <input class="search-input" type="text" v-model="query" :placeholder="placeholder" @keyup.enter="onSearch" />
     <button class="search-button" @click="onSearch">검색</button>
   </div>
 </template>
@@ -40,23 +33,25 @@ const onSearch = () => {
   box-sizing: border-box;
 }
 
-.search-bar h2 {
-  margin-bottom: 20px;
-  font-size: 18px;
-  color: #0277bd;
+.search-bar {
+  display: flex;
+  align-items: center; 
+  gap: 0.5rem;          
 }
+
 .search-input {
-  width: 100%;
+  flex: 1;
   padding: 10px;
-  margin-bottom: 10px;
   font-size: 14px;
   border: 1px solid #81d4fa;
   border-radius: 5px;
   background-color: white;
+  margin: 0;
 }
 
 .search-button {
-  width: 100%;
+  flex: 0 0 auto;
+  width: 100px;         
   padding: 10px;
   background-color: #4fc3f7;
   border: none;
