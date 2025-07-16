@@ -164,6 +164,7 @@ const isLoading = ref(false)
 const isApplying = ref(false)
 const isDragging = ref(false)
 
+// 현재 날짜에 해당하는 스케줄 필터링
 const filteredSchedules = computed(
   () => props.schedules?.filter((s) => s.date === props.selectedDate) ?? [],
 )
@@ -177,7 +178,7 @@ const recommendedRoute = ref([])
 // filteredSchedules가 변경될 때 draggableSchedules 초기화
 watch(filteredSchedules, (newVal) => {
   draggableSchedules.value = [...newVal].sort((a, b) => a.idx - b.idx)
-  recommendedRoute.value = [] // 날짜 변경시 추천 경로 초기화
+  recommendedRoute.value = []
 }, { immediate: true })
 
 // 드래그 끝날 때 실행
@@ -199,23 +200,22 @@ const requestRouteRecommend = async () => {
 
   // 현재 드래그된 순서대로 API 요청
   const payload = draggableSchedules.value.map((s) => ({
-    name: s.place?.placeName ?? '',
+    scheduleId: s.id,
     lat: s.place?.latitude,
     lng: s.place?.longitude,
   }))
 
   try {
     const response = await triendApi({
-      url: '/api/planner/routes/recommend',
+      url: '/api/planner/routes/recommendation',
       method: 'post',
       data: payload,
     })
 
-    const routeNames = response.data.route
+    const routeId = response.data.route
 
-    // 이름 기준으로 filteredSchedules 재정렬
-    const nameToScheduleMap = new Map(filteredSchedules.value.map((s) => [s.place?.placeName, s]))
-    recommendedRoute.value = routeNames.map((name) => nameToScheduleMap.get(name)).filter(Boolean)
+    // routeId 정보를 기반으로 추천 경로 생성
+    recommendedRoute.value = routeId.map(id => filteredSchedules.value.find(s => s.id === id)).filter(Boolean)
 
     // emit으로 지도에 전달
     emit('update:recommendedRoute', recommendedRoute.value)
@@ -240,13 +240,17 @@ const applyRecommendedRoute = async () => {
       idx: index + 1
     }))
 
-    console.log('props.plannerId:', props.plannerId)
-    console.log('경로 적용 데이터:', orderData)
+    const updateRequest = {
+      date : props.selectedDate,
+      schedules: orderData
+    }
+
+    console.log('경로 적용 요청:', updateRequest)
 
     await triendApi({
       url: `/api/planners/${props.plannerId}/schedules/order`,
       method: 'put',
-      data: orderData
+      data: updateRequest
     })
 
     // 성공 시 draggableSchedules도 업데이트
