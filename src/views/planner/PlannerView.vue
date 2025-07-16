@@ -2,17 +2,17 @@
   <div class="planner-view">
     <!-- 📘 내 플래너 사이드바 -->
     <SideBar class="sidebar">
-      <h2>📘 내 플래너</h2>
+      <div class="sidebar-header">
+        <h2>📘 내 플래너</h2>
+        <button class="create-button" @click="openCreateModal">+</button>
+      </div>
       <ul class="planner-list">
         <li v-for="planner in planners" :key="planner.id" @click="fetchSchedules(planner)">
           <div class="planner-header">
             <span class="planner-name">{{ planner.name }}</span>
-            <img
-              class="kakao-icon"
-              src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png"
-              alt="카카오톡 공유"
-              @click.stop="sharePlanner(planner)"
-            />
+            <img class="kakao-icon"
+              src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png" alt="카카오톡 공유"
+              @click.stop="sharePlanner(planner)" />
           </div>
           <div class="button-container">
             <button class="edit-button" @click.stop="showPlannerEditModal(planner)">수정</button>
@@ -32,21 +32,12 @@
       </div>
       <template v-else>
         <!-- 플래너 수정 모델 -->
-        <UpdatePlannerModal
-          v-if="updatePlannerVisible"
-          @updatePlanner="handlePlannerUpdate"
-          @close="updatePlannerVisible = false"
-          :planner="currentPlanner"
-        />
+        <UpdatePlannerModal v-if="updatePlannerVisible" @updatePlanner="handlePlannerUpdate"
+          @close="updatePlannerVisible = false" :planner="currentPlanner" />
 
         <!-- 플래 수정 모델 -->
-        <UpdateScheduleModal
-          v-if="updateSchedulesVisible"
-          :schedules="schedules"
-          :planner="currentPlanner"
-          @close="updateSchedulesVisible = false"
-          @updateSchedules="handleSchedulesUpdate"
-        />
+        <UpdateScheduleModal v-if="updateSchedulesVisible" :schedules="schedules" :planner="currentPlanner"
+          @close="updateSchedulesVisible = false" @updateSchedules="handleSchedulesUpdate" />
         <!-- 메인 컨텐츠 분할 (6:4 비율) -->
         <div class="planner-sections">
           <div
@@ -101,6 +92,10 @@
         </div>
       </template>
     </main>
+
+    <!-- 플래너 생성 모달 -->
+    <CreatePlannerModal v-if="isCreateModalOpen" v-model="isCreateModalOpen" @submit="handleCreatePlanner"
+      @close="isCreateModalOpen = false" />
   </div>
 </template>
 
@@ -115,18 +110,20 @@ import { useMemberStore } from '@/stores/member.js'
 import { useRouter } from 'vue-router'
 import UpdateScheduleModal from '@/components/planner/schedule/UpdateScheduleModal.vue'
 import ScheduleMapSection from '@/components/planner/schedule/ScheduleMapSection.vue'
+import CreatePlannerModal from '@/components/planner/CreatePlannerModal.vue'
 import RouteRecommendSection from '@/components/planner/schedule/RouteRecommenSection.vue'
 
 const router = useRouter()
 const planners = ref([])
 const schedules = ref([])
 const memberStore = useMemberStore()
-const currentPlanner = ref([])
+const currentPlanner = ref(null)
 const currentView = ref('table')
 const updatePlannerVisible = ref(false)
 const updateSchedulesVisible = ref(false)
 const selectedSchedule = ref(null)
 const selectedDate = ref('')
+const isCreateModalOpen = ref(false)
 const recommendedRoute = ref([])
 
 const toggleView = () => {
@@ -175,6 +172,46 @@ const fetchSchedules = async (planner) => {
   }
 }
 
+function openCreateModal() {
+  isCreateModalOpen.value = true
+}
+
+async function handleCreatePlanner(newPlanner) {
+  try {
+    await triendApi({ url: '/api/planners', method: 'post', data: newPlanner })
+    isCreateModalOpen.value = false
+    await fetchPlanners()
+    // (선택 상태를 업데이트 하고 싶으면 아래처럼)
+    // const created = response.data
+    // fetchSchedules(created)
+  } catch (err) {
+    console.error('플래너 생성 실패:', err)
+    alert('플래너 생성에 실패했습니다.')
+  }
+}
+
+const showPlannerEditModal = async (planner) => {
+  try {
+    // 1) 저장된 장소 목록 조회
+    const res = await triendApi({
+      url: `/api/planners/${planner.id}/locations`,
+      method: 'get'
+    })
+
+    // 2) 원래 planner 정보에 locations 필드 추가
+    currentPlanner.value = {
+      ...planner,
+      locations: res.data
+    }
+
+    // 3) 수정 모달 표시
+    updatePlannerVisible.value = true
+  } catch (err) {
+    console.error('플래너 장소 불러오기 실패:', err)
+    alert('플래너의 저장된 장소를 가져오는 데 실패했습니다.')
+  }
+}
+
 const fetchRecommendSchedules = async (plannerId) => {
   if (!currentPlanner.value || !currentPlanner.value.id) return
   try {
@@ -188,17 +225,11 @@ const fetchRecommendSchedules = async (plannerId) => {
   }
 }
 
-
-const showPlannerEditModal = (planner) => {
-  currentPlanner.value = planner
-  updatePlannerVisible.value = true
-}
-
 const handlePlannerUpdate = async (formData) => {
   try {
     await triendApi({ url: `/api/planners/${formData.id}`, method: 'put', data: formData })
     updatePlannerVisible.value = false
-    Object.assign(currentPlanner.value, formData)
+    await fetchPlanners()
   } catch (err) {
     console.error('플래너 수정하기 실패:', err)
   }
@@ -288,9 +319,11 @@ const sharePlanner = async (planner) => {
   overflow-y: auto;
   height: 100%;
 }
+
 .left-section {
   flex: 7;
-  position: relative; /* 버튼 기준점 여기로 변경 */
+  position: relative;
+  /* 버튼 기준점 여기로 변경 */
   flex-direction: column;
   overflow: hidden;
 }
@@ -345,6 +378,13 @@ const sharePlanner = async (planner) => {
   box-sizing: border-box;
 }
 
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
 .sidebar h2 {
   font-size: 18px;
   margin-bottom: 15px;
@@ -357,7 +397,8 @@ const sharePlanner = async (planner) => {
   margin: 0;
   overflow-y: auto;
   flex: 1;
-  min-height: 0; /* flex item 스크롤 위해 필수 */
+  min-height: 0;
+  /* flex item 스크롤 위해 필수 */
 }
 
 .sidebar .planner-list li {
@@ -436,16 +477,6 @@ const sharePlanner = async (planner) => {
   box-sizing: border-box;
 }
 
-.create-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #4fc3f7;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-weight: bold;
-  cursor: pointer;
-}
 /* 표 형식 플랜 영역 */
 .plan-table {
   flex: 1;
@@ -590,13 +621,15 @@ textarea {
   font-size: 14px;
   border: 1px solid #81d4fa;
   border-radius: 5px;
-  box-sizing: border-box; /* ✅ 해결 핵심 */
+  box-sizing: border-box;
+  /* ✅ 해결 핵심 */
 }
 
 .search-button {
   width: 100%;
   padding: 10px;
-  background-color: #4fc3f7; /* 💙 선명한 하늘색 버튼 */
+  background-color: #4fc3f7;
+  /* 💙 선명한 하늘색 버튼 */
   border: none;
   color: white;
   font-size: 14px;
@@ -615,7 +648,8 @@ textarea {
   height: 80vh;
   background: white;
   display: flex;
-  position: relative; /* 기준점 잡아줌 */
+  position: relative;
+  /* 기준점 잡아줌 */
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
@@ -650,22 +684,26 @@ textarea {
   border-radius: 5px;
   cursor: pointer;
 }
+
 .kakao-share-button:hover {
   background-color: #ffd900;
 }
 
 .planner-header {
   display: flex;
-  justify-content: space-between; /* 좌우 끝 정렬 */
+  justify-content: space-between;
+  /* 좌우 끝 정렬 */
   align-items: center;
   width: 100%;
-  gap: 8px; /* 아이템 간 간격 */
+  gap: 8px;
+  /* 아이템 간 간격 */
 }
 
 .planner-name {
   font-weight: bold;
   font-size: 15px;
-  flex: 1; /* 아이콘 밀어냄 */
+  flex: 1;
+  /* 아이콘 밀어냄 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -726,5 +764,23 @@ textarea {
 .hint-text {
   font-size: 18px;
   font-weight: 500;
+}
+
+.create-button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background-color: #4fc3f7;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.create-button:hover {
+  background-color: #039be5;
 }
 </style>

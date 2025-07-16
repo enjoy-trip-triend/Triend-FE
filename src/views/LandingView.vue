@@ -46,7 +46,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import RegionSelector from '@/components/landing/RegionSelector.vue'
+import RegionSelector from '@/components/location/RegionSelector.vue'
 
 const router = useRouter()
 

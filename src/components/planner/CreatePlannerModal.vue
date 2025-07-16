@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal">
       <h2>플래너 생성</h2>
       <form @submit.prevent="createPlanner" class="planner-form">
@@ -13,99 +13,123 @@
           </div>
         </div>
 
-        <!-- 이름 -->
+        <!-- 플래너 이름 -->
         <div class="form-group">
           <label>플래너 이름</label>
-          <input type="text" v-model="form.name" required />
+          <input type="text" v-model="form.name" required placeholder="여행 계획의 이름을 알려주세요." />
         </div>
 
-        <!-- 지역 -->
-        <div class="form-group" style="position: relative">
-          <label>지역</label>
-          <input type="text" v-model="form.location" required autocomplete="off" />
-          <div class="autocomplete-items" v-if="showSuggestions">
-            <div
-              v-for="(suggestion, index) in filteredSuggestions"
-              :key="index"
-              @click="selectLocation(suggestion)"
-            >
-              {{ suggestion }}
-            </div>
+        <!-- 설명 -->
+        <div class="form-group">
+          <label>설명</label>
+          <textarea v-model="form.comment" rows="3" placeholder="당신의 여행을 소개해주세요.(선택)"></textarea>
+        </div>
+
+        <!-- 공개 범위 -->
+        <div class="form-group">
+          <label>공개 범위</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" v-model="form.exposure" value="PUBLIC" /> 전체공개
+            </label>
+            <label class="radio-item">
+              <input type="radio" v-model="form.exposure" value="PRIVATE" /> 비공개
+            </label>
           </div>
         </div>
 
-        <!-- 버튼 -->
+        <!-- 장소 리스트 -->
+        <div class="form-group">
+          <label>장소 추가 (선택)</label>
+          <ul class="locations-list">
+            <li v-for="(loc, idx) in form.locations" :key="idx" class="location-item">
+              <input type="text" :value="loc.name" readonly />
+              <button type="button" class="cancel-btn" @click="removeLocation(idx)">×</button>
+            </li>
+          </ul>
+          <button type="button" class="submit-btn" @click="openLocationModal">장소 추가</button>
+        </div>
+
+        <!-- 액션 버튼 -->
         <div class="button-group">
           <button type="submit" class="submit-btn">생성하기</button>
           <button type="button" class="cancel-btn" @click="$emit('close')">닫기</button>
         </div>
       </form>
+
+      <!-- LocationSelectModal -->
+      <LocationSelectModal v-if="showLocationModal" @select="onRegionSelect" @close="showLocationModal = false" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { defineEmits } from 'vue'
+import { ref } from 'vue'
+import LocationSelectModal from '@/components/location/LocationSelectModal.vue'
 
-const emit = defineEmits(['submit', 'close', 'showPlannerListModal', 'createPlanner'])
+const emit = defineEmits(['submit', 'close'])
 
 const form = ref({
   startDay: '',
   endDay: '',
   name: '',
-  location: '',
+  comment: '',
+  exposure: 'PUBLIC',
+  locations: []
 })
 
-const setEndMin = () => {
-  if (form.value.endDay < form.value.startDay) {
+const showLocationModal = ref(false)
+
+function setEndMin() {
+  if (form.value.endDay && form.value.endDay < form.value.startDay) {
     form.value.endDay = form.value.startDay
   }
 }
 
-// 예시 자동완성 리스트
-const suggestions = ['서울', '부산', '제주', '강릉']
-const showSuggestions = ref(false)
-
-const filteredSuggestions = computed(() =>
-  suggestions.filter((loc) => loc.includes(form.value.location)),
-)
-
-const selectLocation = (loc) => {
-  form.value.location = loc
-  showSuggestions.value = false
+function openLocationModal() {
+  showLocationModal.value = true
 }
 
-const createPlanner = () => {
+function onRegionSelect(region) {
+  // 장소 중복 삽입 막기
+  const exists = form.value.locations.some(l =>
+    l.sidoCode === region.sidoCode &&
+    l.gugunCode === region.gugunCode
+  )
+  if (exists) {
+    return alert('이미 등록된 장소입니다.')
+  }
+
+  form.value.locations.push({
+    sidoCode: region.sidoCode,
+    gugunCode: region.gugunCode,
+    name: region.label
+  })
+  showLocationModal.value = false
+}
+
+function removeLocation(idx) {
+  form.value.locations.splice(idx, 1)
+}
+
+function createPlanner() {
   const requestData = {
-    name: form.value.name,
     startDay: form.value.startDay,
     endDay: form.value.endDay,
-    location: form.value.location,
+    name: form.value.name,
+    comment: form.value.comment || null,
+    exposure: form.value.exposure,
+    locations: form.value.locations.map(l => ({
+      sidoCode: l.sidoCode,
+      gugunCode: l.gugunCode
+    }))
   }
-  emit('createPlanner', requestData)
+  emit('submit', requestData)
+  emit('close')
 }
 </script>
 
 <style scoped>
-.modal h2 {
-  margin-bottom: 15px;
-  color: #0288d1;
-}
-
-.modal button {
-  margin-top: 20px;
-  padding: 8px 16px;
-  background-color: #4fc3f7;
-  border: none;
-  border-radius: 5px;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-  margin: 0px 3px;
-}
-
-/* 모달 공통 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -119,26 +143,44 @@ const createPlanner = () => {
   align-items: center;
 }
 
-/* 모달 본문 */
 .modal {
   position: absolute;
   width: 400px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #ffffff;
+  background: #fff;
   padding: 30px;
   border-radius: 10px;
-  min-width: 300px;
-  text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  z-index: 210; /* 모달을 다른 요소들 위로 올리기 위해 z-index 추가 */
+  text-align: center;
+  z-index: 210;
 }
 
-.button-group {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
+.modal h2 {
+  margin-bottom: 15px;
+  color: #0288d1;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.planner-form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.planner-form input,
+.planner-form textarea {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
 }
 
 .date-inline {
@@ -156,40 +198,65 @@ const createPlanner = () => {
   color: #555;
 }
 
-.autocomplete-items {
-  position: absolute;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  z-index: 999;
-  max-height: 150px;
-  overflow-y: auto;
-  width: 100%;
+.radio-group {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
 }
-.autocomplete-items div {
-  padding: 8px;
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.locations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.location-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.location-item input[readonly] {
+  background: #f9f9f9;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.submit-btn {
+  background-color: #4fc3f7;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
   cursor: pointer;
 }
-.autocomplete-items div:hover {
-  background-color: #f0f0f0;
+
+.submit-btn:hover {
+  background-color: #015f9b;
 }
 
-.planner-form .form-group {
-  margin-bottom: 16px;
-}
-
-.planner-form label {
-  font-size: 14px;
-  margin-bottom: 5px;
-  display: block;
-  font-weight: 500;
-}
-
-.planner-form input,
-.planner-form textarea {
-  width: 100%;
-  padding: 8px;
-  font-size: 14px;
-  border: 1px solid #ccc;
+.cancel-btn {
+  background: transparent;
+  border: 1px solid #4fc3f7;
+  color: #4fc3f7;
+  padding: 8px 16px;
   border-radius: 5px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #f0f6fa;
 }
 </style>
