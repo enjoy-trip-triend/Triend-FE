@@ -88,8 +88,6 @@ export function usePlaceSearch(map, onPlannerClick, router) {
     window.kakao.maps.event.addListener(marker, 'click', () => {
       if (currentOverlay.value) currentOverlay.value.setMap(null)
 
-      // ✅ 줌인 추가
-      map.setLevel(3)
       map.panTo(marker.getPosition())
 
       overlay.setMap(map)
