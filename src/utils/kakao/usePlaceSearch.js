@@ -145,17 +145,6 @@ export function usePlaceSearch(map, onPlannerClick, router) {
     const ps = new window.kakao.maps.services.Places()
     const options = {}
 
-    if (regionCode) {
-      const code = regionCode.toString()
-      if (code.startsWith('11')) { // 서울
-        options.location = new window.kakao.maps.LatLng(37.5665, 126.9780)
-        options.radius = 10000 // 10km
-      } else if (code.startsWith('26')) { // 부산
-        options.location = new window.kakao.maps.LatLng(35.1796, 129.0756)
-        options.radius = 10000
-      }
-    }
-
     ps.keywordSearch(keyword, (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
         const bounds = new window.kakao.maps.LatLngBounds()

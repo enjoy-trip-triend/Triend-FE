@@ -11,12 +11,10 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-// import { triendApi } from '@/axios'
 import { usePlaceSearch } from '@/utils/kakao/usePlaceSearch'
 import { useMemberStore } from '@/stores/member'
 import MyPlaceButton from '@/components/myplace/MyPlaceButton.vue'
 import HotPlaceButton from '@/components/hotplace/HotPlaceButton.vue'
-import axios from 'axios'
 
 const router = useRouter()
 const memberStore = useMemberStore()
@@ -25,81 +23,6 @@ const props = defineProps({
   searchQuery: String,
   regionCode: String,
 })
-
-let boundaryPolygons = []
-watch(
-  () => props.regionCode,
-  async (newCode) => {
-    console.log('⚙️ regionCode changed → drawBoundary:', newCode)
-    if (newCode) {
-      // 기존에 그려진 경계 제거
-      boundaryPolygons.forEach(poly => poly.setMap(null))
-      boundaryPolygons = []
-      await drawBoundary(newCode)
-    }
-  },
-)
-
-// 2) drawBoundary 함수 추가
-async function drawBoundary(code) {
-  // 1) 데이터셋 결정: 2자리면 시·도, 5자리면 시·군·구
-  const isProvince = code.length <= 2
-  const dataset = isProvince ? 'LT_C_ADSIDO_INFO' : 'LT_C_ADSIGG_INFO'
-  const filterKey = isProvince
-    ? 'ctprvn_cd' // 시·도 코드 속성명
-    : 'sig_cd' // 시·군·구 코드 속성명
-
-  // 2) URL 조립 (geometry=true)
-  const url =
-    `/vworld/req/data?service=data` +
-    `&request=GetFeature&version=2.0` +
-    `&data=${dataset}` +
-    `&key=${import.meta.env.VITE_VWORLD_KEY}&domain=${import.meta.env.VITE_VWORLD_DOMAIN}` +
-    `&format=json&geometry=true` +
-    `&attrFilter=${filterKey}:IN:${code}`
-
-  // 3) API 호출
-  const { data } = await axios.get(url)
-  if (data.response.status !== 'OK') {
-    console.warn('경계 조회 실패', code, data.response.error)
-    return
-  }
-
-  const features = data.response.result.featureCollection.features
-  if (!features.length) return
-  const coords = features[0].geometry.coordinates // MultiPolygon
-
-  // 1) 기존에 그려둔 폴리곤 모두 제거
-  boundaryPolygons.forEach((poly) => poly.setMap(null))
-  boundaryPolygons = []
-
-  // 2) MultiPolygon 각 그룹(섬/본섬)마다 Polygon 생성
-  coords.forEach((polygonGroup) => {
-    // polygonGroup: [outerRing, hole1?, hole2?, …]
-    const outerRing = polygonGroup[0]
-    // LatLng 배열로 변환
-    const path = outerRing.map((pt) => new window.kakao.maps.LatLng(pt[1], pt[0]))
-
-    // 각 섬/본섬 별로 Polygon 생성
-    const poly = new window.kakao.maps.Polygon({
-      path,
-      strokeWeight: 3,
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.8,
-      fillColor: '#FFCCCC',
-      fillOpacity: 0.2,
-    })
-    poly.setMap(kakaoMap.value)
-    boundaryPolygons.push(poly)
-  })
-
-  // 3) 모든 경계가 보이도록 지도 범위 확대
-  const bounds = new window.kakao.maps.LatLngBounds()
-  boundaryPolygons.forEach((poly) => {
-    poly.getPath().forEach((latlng) => bounds.extend(latlng))
-  })
-  kakaoMap.value.setBounds(bounds)
-}
 
 const emit = defineEmits(['showPlannerListModal'])
 
