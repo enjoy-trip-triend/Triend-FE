@@ -179,7 +179,7 @@ watch(
     console.log('🔍 searchQuery changed → searchPlaces:', newQuery)
     if (newQuery && props.regionCode && typeof searchPlaces === 'function') {
       _clearMarkers()
-      searchPlaces(newQuery)
+      searchPlaces(newQuery, props.regionCode)
     }
   }
 )

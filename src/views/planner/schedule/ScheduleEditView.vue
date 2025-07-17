@@ -49,7 +49,7 @@ function onSearch(q) {
   if (!selectedRegion.value) {
     return alert('먼저 영역을 선택해주세요.')
   }
-  keyword.value = q
+  keyword.value = q.query
 }
 
 // MapContainer → 마커 클릭 시 주는 장소 데이터를 스토어에 추가

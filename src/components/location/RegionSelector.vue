@@ -69,7 +69,7 @@ function emitRegion() {
   const prov = provinces.value.find(p => p.sidoCode === selectedProvince.value)?.sidoName || ''
   const dist = districts.value.find(d => d.gugunCode === selectedDistrict.value)?.gugunName || ''
   const label = dist ? `${prov} ${dist}` : prov
-  const regionCode = selectedDistrict.value || selectedProvince.value
+  const regionCode = String(selectedDistrict.value || selectedProvince.value)
   emit('search-region', {
     label,
     sidoCode: selectedProvince.value,

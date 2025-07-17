@@ -134,13 +134,28 @@ export function usePlaceSearch(map, onPlannerClick, router) {
     listEl.appendChild(fragment)
   }
 
-  function searchPlaces(keyword) {
+  function searchPlaces(keyword, regionCode) {
     if (!keyword.trim()) {
       alert('검색어를 입력해주세요!')
       return
     }
+
     clearMarkers() // 🔁 기존 마커 제거
+
     const ps = new window.kakao.maps.services.Places()
+    const options = {}
+
+    if (regionCode) {
+      const code = regionCode.toString()
+      if (code.startsWith('11')) { // 서울
+        options.location = new window.kakao.maps.LatLng(37.5665, 126.9780)
+        options.radius = 10000 // 10km
+      } else if (code.startsWith('26')) { // 부산
+        options.location = new window.kakao.maps.LatLng(35.1796, 129.0756)
+        options.radius = 10000
+      }
+    }
+
     ps.keywordSearch(keyword, (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
         const bounds = new window.kakao.maps.LatLngBounds()
@@ -152,7 +167,7 @@ export function usePlaceSearch(map, onPlannerClick, router) {
         map.setBounds(bounds)
         renderPlaceList()
       }
-    })
+    }, options)
   }
 
   function handleMapClick(mouseLatLng) {
