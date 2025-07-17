@@ -22,7 +22,7 @@
       <li><strong>주소</strong> {{ place.road_address_name || place.address_name }}</li>
     </ul>
     <div class="actions">
-      <button class="btn btn-heart" @click.stop="$emit('heart')">💖 나만의 장소</button>
+      <!--<button class="btn btn-heart" @click.stop="$emit('heart')">💖 나만의 장소</button>-->
       <button class="btn btn-plan"  @click.stop="$emit('plan')">📅 플래너에 담기</button>
     </div>
   </div>
