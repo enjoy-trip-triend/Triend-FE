@@ -53,9 +53,9 @@ function onSearch(q) {
 }
 
 // MapContainer → 마커 클릭 시 주는 장소 데이터를 스토어에 추가
-function onPlannerClick(placeUrl, placeName, address, lon, lat) {
+function onPlannerClick(placeUrl, placeName, address, lon, lat, kakaoId) {
   store.addPlace({
-    id: null,
+    id: kakaoId,
     place_url: placeUrl,
     title: placeName,
     address,

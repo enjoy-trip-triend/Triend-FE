@@ -65,12 +65,12 @@ const loadKakaoMap = (container) => {
       // usePlaceSearch 유틸 호출
       const searchUtil = usePlaceSearch(
         kakaoMap.value,
-        (place_url, placeName, address, lon, lat) => {
+        (place_url, placeName, address, lon, lat, kakaoId) => {
           if (!memberStore.isLoggedIn) {
             alert('로그인 후 이용 가능한 기능입니다.')
             return router.push({ name: 'LoginView' })
           }
-          emit('showPlannerListModal', place_url, placeName, address, lon, lat)
+          emit('showPlannerListModal', place_url, placeName, address, lon, lat, kakaoId)
         },
         router,
       )

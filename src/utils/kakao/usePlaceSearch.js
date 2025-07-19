@@ -56,9 +56,10 @@ export function usePlaceSearch(map, onPlannerClick, router) {
           onPlan:  () => onPlannerClick(
             place.place_url, place.place_name,
             place.road_address_name || place.address_name,
-            place.x, place.y
-          )
-        })
+            place.x, place.y,
+            place.id
+          )}
+        )
     }).mount(container)
 
     return overlay
