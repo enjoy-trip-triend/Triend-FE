@@ -2,23 +2,32 @@
   <div class="schedule-edit-grid pt-16">
     <!-- 좌측: 영역 선택 + 검색 + 지도 -->
     <div class="map-area">
-      <div class="controls flex items-center space-x-4 mb-4">
-        <RegionSelector class="flex-none" @search-region="onRegionSelect" />
-        <SearchBar class="flex-1" v-model="keyword" placeholder="키워드를 입력하세요." button-text="검색" @search="onSearch" />
+      <div class="controls" v-if="!store.showTable">
+        <RegionSelector @search-region="onRegionSelect" />
+        <SearchBar v-model="keyword" @search="onSearch" />
       </div>
-      <MapContainer :regionCode="selectedRegion?.regionCode" :searchQuery="keyword"
-        @showPlannerListModal="onPlannerClick" />
-      <button class="toggle-btn" @click="store.toggleView">
-        {{ store.showTable ? '지도 보기' : '일정표 보기' }}
+
+      <MapContainer
+        v-if="!store.showTable"
+        :searchQuery="keyword"
+        :regionCode="selectedRegion?.regionCode"
+        @showPlannerListModal="onPlannerClick"
+      />
+
+      <ScheduleEditTable
+        v-else
+        :items="store.scheduleItems"
+        @update="store.updateSchedule"
+      />
+
+      <button class="floating-btn" @click="store.toggleView">
+        {{ store.showTable ? '🗺️' : '📋' }}
       </button>
     </div>
 
     <!-- 우측: 담은 장소 리스트 & 일정표 -->
     <div class="sidebar">
       <SidebarList :places="store.selectedPlaces" @remove="store.removePlace" />
-      <template v-if="store.showTable">
-        <ScheduleEditTable :items="store.scheduleItems" @update="store.updateSchedule" />
-      </template>
     </div>
   </div>
 </template>
@@ -106,5 +115,26 @@ function onPlannerClick(placeUrl, placeName, address, lon, lat, kakaoId) {
   padding: 1rem;
   background: #f9f9f9;
   overflow-y: auto;
+}
+
+.floating-btn {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #1d4ed8;
+  color: white;
+  font-size: 22px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: background-color 0.3s;
+  z-index: 10;
+}
+
+.floating-btn:hover {
+  background-color: #2563eb;
 }
 </style>
