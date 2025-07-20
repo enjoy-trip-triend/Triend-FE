@@ -1,37 +1,34 @@
 <template>
-  <div class="schedule-edit-grid pt-16">
-    <!-- 좌측: 영역 선택 + 검색 + 지도 -->
+  <div class="schedule-edit-grid">
+    <!-- 좌측: 영역 선택 + 검색 + 지도/일정 -->
     <div class="map-area">
+      <!-- 검색 영역 -->
       <div class="controls" v-if="!store.showTable">
         <RegionSelector @search-region="onRegionSelect" />
         <SearchBar v-model="keyword" @search="onSearch" />
       </div>
 
-      <MapContainer
-        v-if="!store.showTable"
-        :searchQuery="keyword"
-        :regionCode="selectedRegion?.regionCode"
-        @showPlannerListModal="onPlannerClick"
-      />
+      <!-- 지도 or 일정 편집 -->
+      <div class="main-box">
+        <MapContainer v-if="!store.showTable" :searchQuery="keyword" :regionCode="selectedRegion?.regionCode"
+          @showPlannerListModal="onPlannerClick" />
 
-      <ScheduleEditTable
-        v-else
-        :items="store.scheduleItems"
-        @update="store.updateSchedule"
-      />
+        <div v-else class="edit-box">
+          <h3 class="section-title">📝 일정 편집</h3>
+          <hr class="divider" />
+          <ScheduleEditTable :items="store.scheduleItems" @update="store.updateSchedule" />
+        </div>
+      </div>
 
+      <!-- 우하단 전환 버튼 -->
       <button class="floating-btn" @click="store.toggleView">
         {{ store.showTable ? '🗺️' : '📋' }}
       </button>
     </div>
 
-    <!-- 우측: 담은 장소 리스트 & 일정표 -->
+    <!-- 우측: 담은 장소 리스트 -->
     <div class="sidebar">
-      <SidebarList
-        :places="store.selectedPlaces"
-        @remove="store.removePlace"
-        @reorder="store.updateSelectedPlaces"
-      />
+      <SidebarList :places="store.selectedPlaces" @remove="store.removePlace" @reorder="store.updateSelectedPlaces" />
     </div>
   </div>
 </template>
@@ -84,6 +81,7 @@ function onPlannerClick(placeUrl, placeName, address, lon, lat, kakaoId) {
   grid-template-columns: 3fr 1fr;
   height: calc(100vh - 64px);
   padding-top: 64px;
+  /*gap: 1rem;*/
 }
 
 .controls {
@@ -102,7 +100,45 @@ function onPlannerClick(placeUrl, placeName, address, lon, lat, kakaoId) {
 }
 
 .map-area {
+  padding: 1.5rem;
+  background: #f9f9f9;
   position: relative;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-box {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  padding: 1.2rem;
+  flex: 1;
+  position: relative;
+}
+
+.inner-box {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  padding: 1.2rem;
+  height: 100%;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1d4ed8;
+}
+
+.divider {
+  border: none;
+  height: 1px;
+  background-color: #ddd;
+  margin-bottom: 1rem;
 }
 
 .toggle-btn {
@@ -133,9 +169,9 @@ function onPlannerClick(placeUrl, placeName, address, lon, lat, kakaoId) {
   font-size: 22px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s;
-  z-index: 10;
+  z-index: 999;
 }
 
 .floating-btn:hover {

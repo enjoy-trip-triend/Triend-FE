@@ -8,18 +8,15 @@
       장소를 담아주세요!
     </div>
 
-    <draggable
-      v-model="localPlaces"
-      item-key="id"
-      handle=".drag-handle"
-      @end="onDragEnd"
-      class="place-list"
-      animation="200"
-    >
+    <draggable v-model="localPlaces" item-key="id" handle=".drag-handle" @end="onDragEnd" class="place-list"
+      animation="200">
       <template #item="{ element }">
         <li class="sidebar-item">
-          <span class="drag-handle">☰</span>
-          <span class="place-title">{{ element.title }}</span>
+          <font-awesome-icon icon="grip-vertical" class="drag-handle" />
+          <div class="place-info">
+            <span class="place-title">{{ element.title }}</span>
+            <span class="place-address">{{ element.address }}</span>
+          </div>
           <button class="remove-btn" @click="$emit('remove', element.id)">✕</button>
         </li>
       </template>
@@ -70,7 +67,7 @@ function onDragEnd() {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
-  color: #1d4ed8;
+  color: #0277bd;
 }
 
 .divider {
@@ -96,17 +93,35 @@ function onDragEnd() {
 }
 
 .drag-handle {
-  font-size: 18px;
-  margin-right: 8px;
-  color: #888;
+  margin-right: 16px;
+  color: #999;
   cursor: grab;
+  font-size: 16px;
+}
+
+.drag-handle:hover {
+  color: #0277bd;
+}
+
+.place-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .place-title {
   flex: 1;
   font-size: 14px;
+  font-weight: 550;
   color: #333;
   word-break: keep-all;
+}
+
+.place-address {
+  font-size: 11px;
+  color: #888;
+  line-height: 1.2;
 }
 
 .remove-btn {
