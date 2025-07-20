@@ -27,7 +27,11 @@
 
     <!-- 우측: 담은 장소 리스트 & 일정표 -->
     <div class="sidebar">
-      <SidebarList :places="store.selectedPlaces" @remove="store.removePlace" />
+      <SidebarList
+        :places="store.selectedPlaces"
+        @remove="store.removePlace"
+        @reorder="store.updateSelectedPlaces"
+      />
     </div>
   </div>
 </template>

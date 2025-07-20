@@ -28,5 +28,8 @@ export const useScheduleStore = defineStore('schedule', {
     updateSchedule(items) {
       this.scheduleItems = items
     },
+    updateSelectedPlaces(newList) {
+      this.selectedPlaces = [...newList]
+    }
   },
 })
