@@ -1,152 +1,172 @@
 <template>
-  <section class="schedule-edit-table">
-    <div class="header">
-      <h3>🗓️ 여행 일정 구성</h3>
-      <button @click="addDay">+ 일자 추가</button>
-    </div>
+  <div class="schedule-edit-table">
+    <div v-for="date in dateList" :key="date" class="date-section">
+      <h4 class="date-label">📅 {{ formatDate(date) }}</h4>
 
-    <div class="day-columns">
-      <div
-        v-for="(day, index) in localSchedule"
-        :key="day.date"
-        class="day-column"
+      <draggable
+        :list="getItemsForDate(date)"
+        group="places"
+        item-key="id"
+        class="item-dropzone"
+        @add="onAddItem(date, $event)"
+        @end="emitUpdate"
       >
-        <h4>{{ index + 1 }}일차 ({{ day.date }})</h4>
-
-        <draggable
-          v-model="day.items"
-          :group="{ name: 'places', pull: true, put: true }"
-          item-key="id"
-          handle=".drag-handle"
-          class="item-list"
-          @end="emitUpdate"
-        >
-          <template #item="{ element }">
-            <div class="schedule-item">
-              <span class="drag-handle">☰</span>
-              <span class="title">{{ element.title }}</span>
-              <span class="time">{{ element.time || '시간 미지정' }}</span>
-              <button class="remove-btn" @click="removeItem(index, element.id)">×</button>
-            </div>
-          </template>
-        </draggable>
-      </div>
+        <template #item="{ element }">
+          <div class="schedule-item">
+            <span class="drag-handle">☰</span>
+            <span class="title">{{ element.title }}</span>
+            <span class="time">{{ element.time || '시간 미지정' }}</span>
+            <button class="remove-btn" @click="removeItem(element.id)">×</button>
+          </div>
+        </template>
+      </draggable>
     </div>
 
     <button class="save-btn" @click="emitUpdate">저장</button>
-  </section>
+  </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import draggable from 'vuedraggable'
 import dayjs from 'dayjs'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+
+dayjs.extend(isSameOrBefore)
 
 const props = defineProps({
-  items: { type: Array, default: () => [] }  // [{ date, items: [{id, title, time}] }]
+  items: { type: Array, default: () => [] }, // scheduleItems
+  startDate: String,
+  endDate: String
 })
 const emit = defineEmits(['update'])
 
-const localSchedule = ref([...props.items])
+const scheduleItems = ref([...props.items])
 
-watch(() => props.items, (newVal) => {
-  localSchedule.value = [...newVal]
+watch(() => props.items, (val) => {
+  scheduleItems.value = [...val]
 }, { deep: true })
 
-function addDay() {
-  const today = dayjs().format('YYYY-MM-DD')
-  const nextDate = dayjs(today).add(localSchedule.value.length, 'day').format('YYYY-MM-DD')
-  localSchedule.value.push({ date: nextDate, items: [] })
-  emit('update', localSchedule.value)
+// 📅 startDate ~ endDate 범위 내 날짜 리스트 생성
+const dateList = computed(() => {
+  const dates = []
+  let current = dayjs(props.startDate)
+  const end = dayjs(props.endDate)
+
+  while (current.isSameOrBefore(end)) {
+    dates.push(current.format('YYYY-MM-DD'))
+    current = current.add(1, 'day')
+  }
+  return dates
+})
+
+// 📌 날짜별 일정 필터링
+function getItemsForDate(date) {
+  return scheduleItems.value.filter(i => i.visit_date === date)
 }
 
-function removeItem(dayIndex, id) {
-  localSchedule.value[dayIndex].items = localSchedule.value[dayIndex].items.filter(p => p.id !== id)
-  emit('update', localSchedule.value)
+// ⛳ 드래그로 추가될 때 처리
+function onAddItem(date, event) {
+  const item = event.item?._underlying_vm_ || event.clone()
+  if (!item) return
+
+  // 날짜 설정 및 중복 방지
+  const already = scheduleItems.value.find(i => i.id === item.id && i.visit_date === date)
+  if (!already) {
+    scheduleItems.value.push({ ...item, visit_date: date })
+  }
+  emit('update', scheduleItems.value)
+}
+
+// ❌ 항목 제거
+function removeItem(id) {
+  scheduleItems.value = scheduleItems.value.filter(i => i.id !== id)
+  emit('update', scheduleItems.value)
 }
 
 function emitUpdate() {
-  emit('update', localSchedule.value)
+  emit('update', scheduleItems.value)
+}
+
+function formatDate(dateStr) {
+  return dayjs(dateStr).format('M월 D일 (ddd)')
 }
 </script>
 
 <style scoped>
 .schedule-edit-table {
-  background: transparent;
-  border-radius: 0;         
-  padding: 1rem;               
-  box-shadow: none;         
-  max-height: 100%;
-  overflow-y: auto;
-}
-
-.header {
+  padding: 1rem;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-.edit-row {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.schedule-edit-table h3 {
-  margin-bottom: 12px;
-  color: #0288d1;
-}
-
-.cell {
-  flex: 1;
-  text-align: center;
-}
-.drag-handle {
-  cursor: grab;
-  padding: 0 8px;
-}
-.remove-btn {
-  background: transparent;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  color: #f44336;
-}
-.save-btn {
-  margin-top: 12px;
-  padding: 8px 16px;
-  background: #1976d2;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.save-btn:hover {
-  background: #135ba1;
-}
-
-.day-columns {
-  display: flex;
-  gap: 1rem;
-  overflow-x: auto;
-}
-
-.day-column {
+.date-section {
   background: #fff;
-  padding: 0.8rem;
-  border: 1px solid #eee;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.date-label {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 0.6rem;
+  color: #1d4ed8;
+}
+
+.item-dropzone {
+  min-height: 80px;
+  border: 1px dashed #ccc;
   border-radius: 8px;
-  min-width: 250px;
-  max-height: 600px;
-  overflow-y: auto;
+  padding: 0.5rem;
+  background: #f9f9f9;
 }
 
 .schedule-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  background: white;
   padding: 0.5rem;
-  border-bottom: 1px solid #eee;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  margin-bottom: 0.4rem;
+}
+
+.drag-handle {
+  margin-right: 8px;
+  cursor: grab;
+  color: #888;
+}
+
+.title {
+  font-weight: 500;
+  flex: 1;
+}
+
+.time {
+  font-size: 12px;
+  color: #666;
+  margin-right: 1rem;
+}
+
+.remove-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #e53935;
+  cursor: pointer;
+}
+
+.save-btn {
+  align-self: flex-end;
+  padding: 8px 16px;
+  background-color: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
 }
 </style>
