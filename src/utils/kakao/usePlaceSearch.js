@@ -186,6 +186,8 @@ export function usePlaceSearch(map, onPlannerClick, router) {
           : detailAddr
         if (!buildingName) buildingName = detailAddr
 
+        // TODO: place에서 카테고리 그룹 코드/이름 가져오기
+        
         // 1) 클릭 위치에 대한 place 객체 기본값
         const placeBase = {
           id: null,
