@@ -52,6 +52,7 @@
               :schedules="schedules"
               v-model:selectedSchedule="selectedSchedule"
               :isEditable="true"
+              :planner="currentPlanner"
             />
             <ScheduleMapSection
               v-if="currentView === 'map' && schedules && schedules.length > 0"

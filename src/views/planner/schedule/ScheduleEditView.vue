@@ -16,7 +16,13 @@
         <div v-else class="edit-box">
           <h3 class="section-title">📝 일정 편집</h3>
           <hr class="divider" />
-          <ScheduleEditTable :items="store.scheduleItems" @update="store.updateSchedule" />
+          <ScheduleEditTable
+            :items="store.scheduleItems"
+            :startDate="planner.startDate"
+            :endDate="planner.endDate"
+            @update="store.updateSchedule"
+          />
+
         </div>
       </div>
 
@@ -34,8 +40,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useScheduleStore } from '@/stores/schedule'
+import { triendApi } from '@/axios/index.js'
 import RegionSelector from '@/components/location/RegionSelector.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
 import MapContainer from '@/components/map/MapContainer.vue'
@@ -43,6 +51,10 @@ import SidebarList from '@/components/planner/schedule/SideBarList.vue'
 import ScheduleEditTable from '@/components/planner/schedule/ScheduleEditTable.vue'
 
 const store = useScheduleStore()
+const route = useRoute()
+
+const plannerId = route.params.plannerId
+const planner = history.state?.planner || {}
 
 // 선택된 영역 정보
 const selectedRegion = ref(null)
@@ -73,6 +85,42 @@ function onPlannerClick(placeUrl, placeName, address, lon, lat, kakaoId) {
     y: lat
   })
 }
+
+onMounted(async () => {
+  if (!plannerId) {
+    alert('유효하지 않은 플래너입니다.')
+    return
+  }
+ try {
+    const res = await triendApi({
+      url: `/api/planners/${plannerId}/schedules`,
+      method: 'get',
+    })
+
+    // 필요한 구조로 가공
+    const grouped = {}
+    res.data.forEach(item => {
+      const date = item.date
+      if (!grouped[date]) grouped[date] = []
+      grouped[date].push({
+        id: item.id,
+        title: item.place?.placeName,
+        time: item.startTime,
+        ...item
+      })
+    })
+
+    const formatted = Object.entries(grouped).map(([date, items]) => ({
+      date,
+      items
+    }))
+
+    store.updateSchedule(formatted)
+  } catch (err) {
+    console.error('스케줄 불러오기 실패:', err)
+    alert('스케줄을 불러오는 데 실패했습니다.')
+  }
+})
 </script>
 
 <style scoped>

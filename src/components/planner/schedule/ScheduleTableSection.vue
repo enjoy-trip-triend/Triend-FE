@@ -2,6 +2,7 @@
   <section class="schedule-table">
     <div class="table-header">
       <h3>📅 여행 계획표</h3>
+      <button class="add-btn" @click="goToEditPage">장소 추가</button>
       <button v-if="isEditable" class="edit-btn" @click="openUpdateSchedulesModal">수정</button>
     </div>
     <table>
@@ -49,11 +50,15 @@
 
 <script setup>
 import { computed, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const props = defineProps({
   schedules: Array,
   selectedSchedule: Object,
   isEditable: Boolean,
+  planner: Object
 })
 
 const emit = defineEmits(['openUpdateSchedulesModal', 'update:selectedSchedule'])
@@ -89,9 +94,37 @@ const formatTime = (isoString) => {
   const date = new Date(`1970-01-01T${isoString}`)
   return date.toTimeString().slice(0, 5)
 }
+
+const goToEditPage = () => {
+  console.log('이동합니다')
+  router.push({
+    name: 'ScheduleEditView',
+    params : { plannerId: props.planner.id },
+    state : { planner: props.planner }
+  })
+}
 </script>
 
 <style scoped>
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.add-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #43a047;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background-color: #388e3c;
+}
+
 .schedule-table {
   flex: 1;
   background-color: #ffffff;
